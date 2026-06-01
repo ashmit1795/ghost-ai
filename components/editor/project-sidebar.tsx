@@ -29,7 +29,10 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
           "fixed inset-y-0 left-0 w-80 bg-surface border-r border-surface-border shadow-2xl flex flex-col transition-transform duration-300 ease-in-out z-40 select-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        inert={!isOpen}
       >
+
+
         {/* Header section */}
         <div className="h-14 flex items-center justify-between px-4 border-b border-surface-border shrink-0">
           <h2 className="text-sm font-semibold tracking-wider text-copy-primary uppercase">Projects</h2>

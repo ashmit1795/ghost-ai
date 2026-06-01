@@ -31,7 +31,10 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **Client Component Boundaries**: Explicitly marked foundation elements (`components/ui/button.tsx`, `components/ui/input.tsx`) as `"use client"` since their library implementations rely on React hooks, preventing prerendering errors in standard Next.js Server Components.
 
-## Session Notes
+- **NODE_ENV Environment Variable & build Script**: Note that the local environment has `NODE_ENV` globally configured to `development` which triggers React 19 / Next 16 prerendering and hook context errors during builds. Production compilation of `package.json` scripts must ensure `NODE_ENV` resolves to `production`. Recommend using `cross-env` for a unified cross-platform execution, or run using shell-specific commands:
+  - **Cross-Platform / cross-env**: `npx cross-env NODE_ENV=production npm run build`
+  - **POSIX (Linux/macOS)**: `NODE_ENV=production npm run build`
+  - **Windows Command Prompt (cmd)**: `set NODE_ENV=production && npm run build`
+  - **Windows PowerShell**: `$env:NODE_ENV="production"; npm run build`
 
-- **NODE_ENV Environment Variable**: Note that the local system environment has `NODE_ENV` globally set to `development`. Production builds should be initiated using `cmd /c "set NODE_ENV=production && npm run build"` or equivalent to bypass React 19 / Next 16 hook compilation mismatches.
 
