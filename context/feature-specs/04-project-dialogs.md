@@ -4,34 +4,34 @@ Build the `/editor` home screen and add project dialogs/sidebar actions. No API 
 
 ## Editor Home
 
-Reuse the existing editor layout. Do not modify the navbar or sidebar behavior.
+Integrate the workspace sidebar behavior including owned/shared project separation, workspaces list loading, sidebar actions, and closing the sidebar on backdrop tap/click outside.
 
 In the center of the page, add:
 
-- heading: `Create a project or open an existing one`
-- description: `Start a new architecture workspace, or choose a project from the sidebar.`
-- `New Project` button with a `Plus` icon
+- heading: `Design your next system architecture`
+- description: `Start a new design sandbox, or choose a workspace from the sidebar to begin collaborative modeling.`
+- `Initialize Workspace` button with a `Plus` icon
 
 Keep the layout minimal. Do not wrap this content in cards.
 
-Clicking `New Project` should open the Create Project dialog.
+Clicking `Initialize Workspace` should open the Initialize Workspace dialog.
 
 ## Dialogs
 
-### Create Project
+### Initialize Workspace / Create Workspace
 
-- project name input
+- workspace name input
 - live slug preview based on the name
 - preview updates as the user types
 
-### Rename Project
+### Rename Workspace
 
-- prefilled project name input
-- current project name shown in the description
+- prefilled workspace name input
+- current workspace name shown in the description
 - input auto-focuses
 - Enter submits
 
-### Delete Project
+### Deprovision Workspace
 
 - destructive confirmation only
 - no input
@@ -39,14 +39,14 @@ Clicking `New Project` should open the Create Project dialog.
 
 ## Sidebar
 
-Add project item actions:
+Add workspace item actions:
 
 - rename
-- delete
+- deprovision
 
-Show actions only for owned projects.
+Show actions only for owned workspaces.
 
-Hide actions for shared/collaborator projects.
+Hide actions for shared/collaborator workspaces.
 
 On mobile:
 - tapping outside the sidebar closes it
@@ -62,12 +62,12 @@ Create a dedicated hook to manage:
 
 Wire:
 
-- editor home `New Project` → Create dialog
-- sidebar create → Create dialog
-- sidebar rename → Rename dialog
-- sidebar delete → Delete dialog
+- editor home `Initialize Workspace` ➔ Initialize Workspace dialog
+- sidebar create ➔ Initialize Workspace dialog
+- sidebar rename ➔ Rename Workspace dialog
+- sidebar deprovision ➔ Deprovision Workspace dialog
 
-Use mock project data only. Do not add API calls or persistence.
+Use mock workspace data only. Do not add API calls or persistence.
 
 ## Check When Done
 

@@ -90,10 +90,24 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     // Simulate minor async transition
     await new Promise((resolve) => setTimeout(resolve, 600))
     
+    let baseSlug = generateSlug(name)
+    // Fallback if the slug resolved is empty
+    if (!baseSlug) {
+      baseSlug = "workspace"
+    }
+    
+    // Ensure slug uniqueness among existing projects
+    let uniqueSlug = baseSlug
+    const existingSlugs = new Set(projects.map((p) => p.slug))
+    while (existingSlugs.has(uniqueSlug)) {
+      const randomSuffix = Math.random().toString(36).substring(2, 7) // 5 character random suffix
+      uniqueSlug = `${baseSlug}-${randomSuffix}`
+    }
+    
     const newProject: Project = {
       id: Math.random().toString(36).substring(2, 9),
       name: name.trim(),
-      slug: generateSlug(name),
+      slug: uniqueSlug,
       isOwner: true,
     }
     

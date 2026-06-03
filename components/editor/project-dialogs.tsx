@@ -37,11 +37,12 @@ export function ProjectDialogs() {
   } = useProjects()
 
   const renameInputRef = useRef<HTMLInputElement>(null)
+  const createInputRef = useRef<HTMLInputElement>(null)
 
   // Find the target project details for pre-filling and rendering metadata
   const targetProject = projects.find((p) => p.id === targetProjectId)
 
-  // Populate form with current project name when opening rename dialog
+  // Populate form with current project name when opening rename dialog & handle autofocus
   useEffect(() => {
     if (renameOpen && targetProject) {
       setProjectName(targetProject.name)
@@ -49,6 +50,10 @@ export function ProjectDialogs() {
       setTimeout(() => {
         renameInputRef.current?.focus()
         renameInputRef.current?.select()
+      }, 50)
+    } else if (createOpen) {
+      setTimeout(() => {
+        createInputRef.current?.focus()
       }, 50)
     } else if (!createOpen && !renameOpen) {
       setProjectName("")
@@ -95,6 +100,7 @@ export function ProjectDialogs() {
                   Workspace Name
                 </label>
                 <Input
+                  ref={createInputRef}
                   id="create-workspace-name"
                   placeholder="e.g., Global Checkout Orchestration"
                   value={projectName}

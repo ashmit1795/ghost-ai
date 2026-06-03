@@ -118,7 +118,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
                       </button>
 
                       {/* Hover action controls for owned projects */}
-                      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity duration-200 shrink-0">
+                      <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center gap-1 transition-opacity duration-200 shrink-0">
                         <Button
                           variant="ghost"
                           size="icon-xs"
@@ -127,7 +127,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
                             setTargetProjectId(project.id)
                             setRenameOpen(true)
                           }}
-                          title="Rename Workspace"
+                          aria-label="Rename Workspace"
                           className="text-copy-muted hover:text-brand hover:bg-elevated rounded-lg transition"
                         >
                           <Edit2 className="h-3 w-3" />
@@ -140,7 +140,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
                             setTargetProjectId(project.id)
                             setDeleteOpen(true)
                           }}
-                          title="Deprovision Workspace"
+                          aria-label="Deprovision Workspace"
                           className="text-copy-muted hover:text-error hover:bg-elevated rounded-lg transition"
                         >
                           <Trash2 className="h-3 w-3" />
