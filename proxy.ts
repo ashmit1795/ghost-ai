@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 
 const isProtectedRoute = createRouteMatcher([
   "/editor(.*)",
+  "/(api|trpc)(.*)",
 ])
 
 export const proxy = clerkMiddleware(async (auth, req) => {
