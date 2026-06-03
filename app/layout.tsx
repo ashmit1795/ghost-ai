@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import { dark } from "@clerk/ui/themes";
+import { clerkAppearance } from "@/lib/clerk-theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,18 +27,7 @@ export default function RootLayout({
   return (
     <ClerkProvider
       afterSignOutUrl="/"
-      appearance={{
-        theme: dark,
-        variables: {
-          colorPrimary: "var(--accent-primary)",
-          colorBackground: "var(--bg-surface)",
-          colorInput: "var(--bg-base)",
-          colorForeground: "var(--text-primary)",
-          colorMutedForeground: "var(--text-secondary)",
-          colorBorder: "var(--border-default)",
-          colorPrimaryForeground: "var(--bg-base)",
-        },
-      }}
+      appearance={clerkAppearance}
     >
       <html
         lang="en"

@@ -1,5 +1,5 @@
 import { SignIn } from "@clerk/nextjs"
-import { dark } from "@clerk/ui/themes"
+import { clerkAppearance } from "@/lib/clerk-theme"
 import { CheckCircle2 } from "lucide-react"
 
 export default function SignInPage() {
@@ -79,18 +79,7 @@ export default function SignInPage() {
         
         <div className="relative z-10">
           <SignIn 
-            appearance={{
-              theme: dark,
-              variables: {
-                colorPrimary: "var(--accent-primary)",
-                colorBackground: "var(--bg-surface)",
-                colorInput: "var(--bg-base)",
-                colorForeground: "var(--text-primary)",
-                colorMutedForeground: "var(--text-secondary)",
-                colorBorder: "var(--border-default)",
-                colorPrimaryForeground: "var(--bg-base)",
-              }
-            }}
+            appearance={clerkAppearance}
           />
         </div>
       </div>

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
-import { dark } from "@clerk/ui/themes"
+import { clerkAppearance } from "@/lib/clerk-theme"
 
 interface EditorNavbarProps {
   isSidebarOpen: boolean;
@@ -41,18 +41,7 @@ export function EditorNavbar({ isSidebarOpen, onToggleSidebar }: EditorNavbarPro
       {/* Right section: User Profile Menu */}
       <div className="flex items-center justify-end w-9">
         <UserButton
-          appearance={{
-            theme: dark,
-            variables: {
-              colorPrimary: "var(--accent-primary)",
-              colorBackground: "var(--bg-surface)",
-              colorInput: "var(--bg-base)",
-              colorForeground: "var(--text-primary)",
-              colorMutedForeground: "var(--text-secondary)",
-              colorBorder: "var(--border-default)",
-              colorPrimaryForeground: "var(--bg-base)",
-            },
-          }}
+          appearance={clerkAppearance}
         />
       </div>
     </header>

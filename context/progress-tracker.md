@@ -44,4 +44,10 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **Proxy-Layer Root Route Redirection**: Moved the root-level (`/`) redirection logic out of the server component (`app/page.tsx`) and directly into the proxy middleware (`proxy.ts`). Intercepting `/` requests early at the proxy layer and returning an HTTP 307 redirect (to `/editor` if authenticated, or `/sign-in` if unauthenticated) prevents React 19 / Next 16 rendering and router loops during sign-out. The browser receives a direct HTTP redirect prior to page execution, resulting in an instantaneous and reliable redirection.
 
+- **Theme Configuration Deduplication**: Extracted Clerk's custom appearance configurations into a shared, reusable `clerkAppearance` object in [clerk-theme.ts](file:///a:/WEB%20DEV/Self-Project/ghost-ai/lib/clerk-theme.ts). This single theme object is imported and shared across the root `ClerkProvider` in [layout.tsx](file:///a:/WEB%20DEV/Self-Project/ghost-ai/app/layout.tsx), `<UserButton>` in [editor-navbar.tsx](file:///a:/WEB%20DEV/Self-Project/ghost-ai/components/editor/editor-navbar.tsx), and Clerk auth page screens (`app/sign-in` and `app/sign-up`) to ensure a perfectly synchronized dark theme layout.
+
+- **API & Route Protection**: Configured `proxy.ts` to include `/(api|trpc)(.*)` in addition to `/editor(.*)` as protected paths. This guarantees that any future API endpoints are secure by default, while public routing to `/sign-in`, `/sign-up`, and `/` (which handles middleware-level auth checks and redirects) remains accessible.
+
+- **Placeholder Accessibility**: Disabled the placeholder "Read Documentation" button in `app/editor/page.tsx` using `disabled={true}`, `aria-disabled="true"`, and `title="Documentation coming soon"` to ensure accessibility compliance for assistive technologies and convey that the interactive states are pending documentation setup.
+
 

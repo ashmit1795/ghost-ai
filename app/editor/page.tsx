@@ -98,6 +98,9 @@ export default function EditorPage() {
                 </Button>
                 <Button
                   variant="outline"
+                  disabled={true}
+                  aria-disabled="true"
+                  title="Documentation coming soon"
                   className="border-surface-border text-copy-secondary hover:text-copy-primary hover:bg-subtle text-xs px-5 h-9 rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
                 >
                   Read Documentation
