@@ -50,7 +50,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
         <div className="h-14 flex items-center justify-between px-4 border-b border-surface-border shrink-0">
           <div className="flex items-center gap-2">
             <FolderOpen className="h-4 w-4 text-brand" />
-            <h2 className="text-sm font-semibold tracking-wider text-copy-primary uppercase">Projects</h2>
+            <h2 className="text-sm font-semibold tracking-wider text-copy-primary uppercase">Workspaces</h2>
           </div>
           <Button
             variant="ghost"
@@ -65,33 +65,33 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
 
         {/* Navigation & Content tabs */}
         <div className="flex-1 flex flex-col min-h-0 p-4">
-          <Tabs defaultValue="my-projects" className="flex-1 flex flex-col min-h-0">
+          <Tabs defaultValue="my-workspaces" className="flex-1 flex flex-col min-h-0">
             {/* Tabs List with sleek dark recessed track layout */}
             <TabsList className="!flex !w-full !h-9 !p-1 !bg-base !border !border-surface-border-subtle !rounded-xl mb-4">
               <TabsTrigger 
-                value="my-projects" 
+                value="my-workspaces" 
                 className="!rounded-lg !text-xs !font-medium transition-all duration-200 !h-full data-active:!bg-subtle data-active:!text-copy-primary data-active:!shadow-md text-copy-muted hover:text-copy-secondary"
               >
-                My Projects ({myProjects.length})
+                My Workspaces ({myProjects.length})
               </TabsTrigger>
               <TabsTrigger 
                 value="shared" 
                 className="!rounded-lg !text-xs !font-medium transition-all duration-200 !h-full data-active:!bg-subtle data-active:!text-copy-primary data-active:!shadow-md text-copy-muted hover:text-copy-secondary"
               >
-                Shared ({sharedProjects.length})
+                Shared with Me ({sharedProjects.length})
               </TabsTrigger>
             </TabsList>
 
             {/* My Projects tab panel */}
-            <TabsContent value="my-projects" className="flex-1 flex flex-col min-h-0 focus-visible:outline-none">
+            <TabsContent value="my-workspaces" className="flex-1 flex flex-col min-h-0 focus-visible:outline-none">
               {myProjects.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
                   <div className="h-12 w-12 rounded-full bg-subtle border border-surface-border-subtle flex items-center justify-center mb-4">
                     <FolderOpen className="h-5 w-5 text-copy-faint" />
                   </div>
-                  <h3 className="text-xs font-semibold text-copy-secondary mb-1">No active projects</h3>
+                  <h3 className="text-xs font-semibold text-copy-secondary mb-1">No workspaces found</h3>
                   <p className="text-[11px] text-copy-faint leading-relaxed max-w-[200px]">
-                    Create a new project using the button below to start designing your system architecture.
+                    Initialize a new workspace using the button below to start modeling your cloud architecture.
                   </p>
                 </div>
               ) : (
@@ -127,7 +127,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
                             setTargetProjectId(project.id)
                             setRenameOpen(true)
                           }}
-                          title="Rename Project"
+                          title="Rename Workspace"
                           className="text-copy-muted hover:text-brand hover:bg-elevated rounded-lg transition"
                         >
                           <Edit2 className="h-3 w-3" />
@@ -140,7 +140,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
                             setTargetProjectId(project.id)
                             setDeleteOpen(true)
                           }}
-                          title="Delete Project"
+                          title="Deprovision Workspace"
                           className="text-copy-muted hover:text-error hover:bg-elevated rounded-lg transition"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -159,9 +159,9 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
                   <div className="h-12 w-12 rounded-full bg-subtle border border-surface-border-subtle flex items-center justify-center mb-4">
                     <Users className="h-5 w-5 text-copy-faint" />
                   </div>
-                  <h3 className="text-xs font-semibold text-copy-secondary mb-1">No shared designs</h3>
+                  <h3 className="text-xs font-semibold text-copy-secondary mb-1">No shared collaborations</h3>
                   <p className="text-[11px] text-copy-faint leading-relaxed max-w-[200px]">
-                    Projects shared with you by other collaborators will appear in this tab.
+                    Workspaces shared with you by teammates and organization members will be listed here.
                   </p>
                 </div>
               ) : (
@@ -189,8 +189,8 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
                       </button>
 
                       {/* Actions hidden for shared collaborator projects */}
-                      <span className="text-[9px] text-copy-faint font-mono font-medium opacity-50 px-1 bg-subtle rounded-sm shrink-0">
-                        View
+                      <span className="text-[9px] text-copy-faint font-mono font-medium opacity-70 px-1.5 py-0.5 bg-subtle border border-surface-border-subtle rounded-md shrink-0">
+                        Collaborator
                       </span>
                     </div>
                   ))}
@@ -209,7 +209,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
             className="w-full flex items-center justify-center gap-2 text-xs font-semibold tracking-wide bg-brand hover:bg-brand/80 text-background rounded-xl h-9"
           >
             <Plus className="h-4 w-4" />
-            New Project
+            Initialize Workspace
           </Button>
         </div>
       </aside>

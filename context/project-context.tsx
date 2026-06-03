@@ -42,10 +42,10 @@ interface ProjectContextType {
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 
 const INITIAL_PROJECTS: Project[] = [
-  { id: "1", name: "E-Commerce Pipeline", slug: "e-commerce-pipeline", isOwner: true },
-  { id: "2", name: "Auth Integration", slug: "auth-integration", isOwner: true },
-  { id: "3", name: "System Metrics Dashboard", slug: "system-metrics-dashboard", isOwner: false },
-  { id: "4", name: "Durable Workflows Engine", slug: "durable-workflows-engine", isOwner: false },
+  { id: "1", name: "Global Checkout Orchestration", slug: "global-checkout-orchestration", isOwner: true },
+  { id: "2", name: "Edge Identity Gateway", slug: "edge-identity-gateway", isOwner: true },
+  { id: "3", name: "Real-Time Telemetry Mesh", slug: "real-time-telemetry-mesh", isOwner: false },
+  { id: "4", name: "Durable Ingestion Engine", slug: "durable-ingestion-engine", isOwner: false },
 ]
 
 export const generateSlug = (name: string): string => {

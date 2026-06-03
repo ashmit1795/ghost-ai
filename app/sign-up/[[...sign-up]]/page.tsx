@@ -30,7 +30,7 @@ export default function SignUpPage() {
             Real-time collaborative <span className="font-medium text-brand">system design</span> workspace.
           </h2>
           <p className="text-copy-secondary max-w-md font-light leading-relaxed">
-            Describe your system in plain English, map it onto a live visual canvas, collaborate in real-time, and generate persistent Markdown specs.
+            Design, simulate, and document your system architecture in real-time. Describe your infrastructure in plain English, collaborate live with your engineering team, and generate comprehensive Markdown specifications automatically.
           </p>
         </div>
 
@@ -40,21 +40,21 @@ export default function SignUpPage() {
             <CheckCircle2 className="h-5 w-5 text-brand shrink-0 mt-0.5" />
             <div>
               <h4 className="text-sm font-semibold text-copy-primary">AI Architecture Generation</h4>
-              <p className="text-xs text-copy-muted mt-1 leading-normal font-light">Generate interactive node graphs from simple natural language prompts.</p>
+              <p className="text-xs text-copy-muted mt-1 leading-normal font-light">Generate interactive node graphs and layouts from simple natural language prompts.</p>
             </div>
           </div>
           <div className="flex gap-3">
             <CheckCircle2 className="h-5 w-5 text-brand shrink-0 mt-0.5" />
             <div>
               <h4 className="text-sm font-semibold text-copy-primary">Real-time Canvas Collaboration</h4>
-              <p className="text-xs text-copy-muted mt-1 leading-normal font-light">Work seamlessly with teammates using Liveblocks and React Flow.</p>
+              <p className="text-xs text-copy-muted mt-1 leading-normal font-light">Work seamlessly with your team using real-time cursors, presence indicators, and state sync.</p>
             </div>
           </div>
           <div className="flex gap-3">
             <CheckCircle2 className="h-5 w-5 text-brand shrink-0 mt-0.5" />
             <div>
               <h4 className="text-sm font-semibold text-copy-primary">Technical Spec Persistence</h4>
-              <p className="text-xs text-copy-muted mt-1 leading-normal font-light">Convert layout graphs to persistent, structured Markdown specifications.</p>
+              <p className="text-xs text-copy-muted mt-1 leading-normal font-light">Compile your canvas layouts into persistent, production-ready technical specifications.</p>
             </div>
           </div>
         </div>

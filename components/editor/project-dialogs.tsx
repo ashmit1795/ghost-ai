@@ -82,21 +82,21 @@ export function ProjectDialogs() {
           <form onSubmit={onCreateSubmit} className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle className="text-lg font-light tracking-wide text-copy-primary">
-                Create a <span className="font-semibold text-brand">new project</span>
+                Initialize <span className="font-semibold text-brand">new workspace</span>
               </DialogTitle>
               <DialogDescription className="text-xs text-copy-muted font-light">
-                Give your system design workspace a name.
+                Provision a shared, real-time multiplayer sandbox for system modeling and spec generation.
               </DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col gap-3 my-2">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="create-project-name" className="text-[11px] font-semibold tracking-wider text-copy-secondary uppercase">
-                  Project Name
+                <label htmlFor="create-workspace-name" className="text-[11px] font-semibold tracking-wider text-copy-secondary uppercase">
+                  Workspace Name
                 </label>
                 <Input
-                  id="create-project-name"
-                  placeholder="e.g. Serverless API Gateways"
+                  id="create-workspace-name"
+                  placeholder="e.g., Global Checkout Orchestration"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   disabled={isLoading}
@@ -108,7 +108,7 @@ export function ProjectDialogs() {
               {/* Live slug preview */}
               {projectName.trim() && (
                 <div className="rounded-xl bg-base border border-surface-border-subtle p-3 text-[11px] font-mono text-copy-muted break-all">
-                  <span className="text-copy-faint">Slug:</span>{" "}
+                  <span className="text-copy-faint">Workspace slug:</span>{" "}
                   <span className="text-brand font-semibold">{projectSlug}</span>
                 </div>
               )}
@@ -129,7 +129,7 @@ export function ProjectDialogs() {
                 disabled={isLoading || !projectName.trim()}
                 className="text-xs font-semibold bg-brand hover:bg-brand/80 text-background rounded-xl px-5 h-9"
               >
-                {isLoading ? "Creating..." : "Create Project"}
+                {isLoading ? "Initializing..." : "Initialize Workspace"}
               </Button>
             </DialogFooter>
           </form>
@@ -142,22 +142,22 @@ export function ProjectDialogs() {
           <form onSubmit={onRenameSubmit} className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle className="text-lg font-light tracking-wide text-copy-primary">
-                Rename <span className="font-semibold text-brand">project</span>
+                Rename <span className="font-semibold text-brand">workspace</span>
               </DialogTitle>
               <DialogDescription className="text-xs text-copy-muted font-light">
-                Renaming: <span className="text-copy-secondary font-medium">{targetProject?.name}</span>
+                Modify the public identifier and system routing resource slug of this architecture workspace.
               </DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col gap-3 my-2">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="rename-project-name" className="text-[11px] font-semibold tracking-wider text-copy-secondary uppercase">
-                  New Project Name
+                <label htmlFor="rename-workspace-name" className="text-[11px] font-semibold tracking-wider text-copy-secondary uppercase">
+                  New Workspace Name
                 </label>
                 <Input
                   ref={renameInputRef}
-                  id="rename-project-name"
-                  placeholder="Enter project name"
+                  id="rename-workspace-name"
+                  placeholder="e.g., Real-Time Telemetry Mesh"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   disabled={isLoading}
@@ -168,7 +168,7 @@ export function ProjectDialogs() {
 
               {projectName.trim() && (
                 <div className="rounded-xl bg-base border border-surface-border-subtle p-3 text-[11px] font-mono text-copy-muted break-all">
-                  <span className="text-copy-faint">New Slug:</span>{" "}
+                  <span className="text-copy-faint">New slug:</span>{" "}
                   <span className="text-brand font-semibold">{projectSlug}</span>
                 </div>
               )}
@@ -192,7 +192,7 @@ export function ProjectDialogs() {
                 disabled={isLoading || !projectName.trim() || projectName.trim() === targetProject?.name}
                 className="text-xs font-semibold bg-brand hover:bg-brand/80 text-background rounded-xl px-5 h-9"
               >
-                {isLoading ? "Saving..." : "Rename Project"}
+                {isLoading ? "Applying..." : "Apply Changes"}
               </Button>
             </DialogFooter>
           </form>
@@ -207,11 +207,11 @@ export function ProjectDialogs() {
               <div className="flex items-center gap-2 text-error mb-1">
                 <AlertTriangle className="h-5 w-5" />
                 <DialogTitle className="text-lg font-semibold tracking-wide">
-                  Delete Project
+                  Deprovision Workspace
                 </DialogTitle>
               </div>
               <DialogDescription className="text-xs text-copy-muted font-light leading-relaxed">
-                Are you sure you want to delete <span className="text-copy-secondary font-medium font-semibold">{targetProject?.name}</span>? This action is permanent and cannot be undone.
+                This action will permanently purge the workspace <span className="text-copy-secondary font-semibold">&ldquo;{targetProject?.name}&rdquo;</span>, along with all associated canvas nodes, connection edges, and generated specifications. This process is irreversible.
               </DialogDescription>
             </DialogHeader>
 
@@ -234,7 +234,7 @@ export function ProjectDialogs() {
                 variant="destructive"
                 className="text-xs font-semibold bg-error hover:bg-error/80 text-foreground rounded-xl px-5 h-9"
               >
-                {isLoading ? "Deleting..." : "Delete Project"}
+                {isLoading ? "Deprovisioning..." : "Deprovision Workspace"}
               </Button>
             </DialogFooter>
           </form>

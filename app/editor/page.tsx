@@ -59,7 +59,7 @@ function EditorWorkspace() {
                 <div className="flex items-center gap-2 self-start bg-brand-dim border border-brand/20 rounded-full px-3 py-1 mb-6">
                   <Sparkles className="h-3 w-3 text-brand" />
                   <span className="text-[10px] font-mono font-semibold tracking-wider text-brand uppercase">
-                    Active Room: {activeProject.slug}
+                    Active Workspace: {activeProject.slug}
                   </span>
                 </div>
 
@@ -68,7 +68,7 @@ function EditorWorkspace() {
                   {activeProject.name}
                 </h1>
                 <p className="text-sm text-copy-secondary leading-relaxed mb-6 font-light">
-                  Describe your system in plain English, map it onto a live visual canvas, collaborate in real-time, and generate persistent Markdown specs.
+                  Model and document your cloud architecture in real-time. Describe your requirements in plain English, edit visual elements on the canvas, and compile structural designs into structured technical specifications.
                 </p>
 
                 {/* Grid actions / Status */}
@@ -76,20 +76,20 @@ function EditorWorkspace() {
                   <div className="flex flex-col gap-2 p-4 bg-elevated/40 border border-surface-border-subtle rounded-2xl">
                     <div className="flex items-center gap-2 text-copy-secondary">
                       <LayoutGrid className="h-4 w-4 text-brand" />
-                      <span className="text-xs font-semibold">Collaborative Canvas</span>
+                      <span className="text-xs font-semibold">Interactive Visual Canvas</span>
                     </div>
                     <p className="text-[11px] text-copy-muted leading-normal font-light">
-                      This is your live canvas. Drag, drop, link, and resize node elements.
+                      Model complex system topologies using dynamic nodes, decision gateways, and database symbols on a multiplayer grid.
                     </p>
                   </div>
 
                   <div className="flex flex-col gap-2 p-4 bg-elevated/40 border border-surface-border-subtle rounded-2xl">
                     <div className="flex items-center gap-2 text-copy-secondary">
                       <Terminal className="h-4 w-4 text-brand-ai-text" />
-                      <span className="text-xs font-semibold">AI System Architect</span>
+                      <span className="text-xs font-semibold">AI-Powered Orchestrator</span>
                     </div>
                     <p className="text-[11px] text-copy-muted leading-normal font-light">
-                      AI generation tools will be wired into this active canvas workspace.
+                      Prompt the system-level agent to automatically synthesize layout structures, API connections, and message queues.
                     </p>
                   </div>
                 </div>
@@ -101,7 +101,7 @@ function EditorWorkspace() {
                     variant="outline"
                     className="border-surface-border text-copy-secondary hover:text-copy-primary hover:bg-subtle text-xs px-5 h-9 rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
                   >
-                    Close Project
+                    Exit Workspace
                   </Button>
                   <Button
                     variant="outline"
@@ -110,7 +110,7 @@ function EditorWorkspace() {
                     title="Documentation coming soon"
                     className="border-surface-border text-copy-secondary hover:text-copy-primary hover:bg-subtle text-xs px-5 h-9 rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
                   >
-                    Read Documentation
+                    Developer Docs
                   </Button>
                 </div>
               </div>
@@ -119,17 +119,17 @@ function EditorWorkspace() {
             /* Minimal Card-Free Editor Home Screen (when no project is open) */
             <div className="relative text-center max-w-md mx-auto z-10 flex flex-col items-center gap-4 animate-in fade-in duration-300">
               <h1 className="text-3xl font-extralight tracking-wide text-copy-primary leading-tight">
-                Create a project or <span className="font-semibold text-brand">open an existing one</span>
+                Design your next <span className="font-semibold text-brand">system architecture</span>
               </h1>
               <p className="text-sm text-copy-secondary leading-relaxed font-light">
-                Start a new architecture workspace, or choose a project from the sidebar.
+                Start a new design sandbox, or choose a workspace from the sidebar to begin collaborative modeling.
               </p>
               <Button
                 onClick={() => setCreateOpen(true)}
                 className="mt-2 bg-brand hover:bg-brand/80 text-background text-xs font-semibold px-6 h-10 rounded-xl shadow-lg flex items-center gap-2 transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Plus className="h-4 w-4" />
-                New Project
+                Initialize Workspace
               </Button>
             </div>
           )}
