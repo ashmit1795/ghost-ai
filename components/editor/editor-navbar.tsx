@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { UserButton } from "@clerk/nextjs"
+import { clerkAppearance } from "@/lib/clerk-theme"
 
 interface EditorNavbarProps {
   isSidebarOpen: boolean;
@@ -36,8 +38,12 @@ export function EditorNavbar({ isSidebarOpen, onToggleSidebar }: EditorNavbarPro
         <span className="text-xs font-mono text-copy-faint tracking-tight font-medium">Workspace</span>
       </div>
 
-      {/* Right section: Kept empty as specified */}
-      <div className="w-9" />
+      {/* Right section: User Profile Menu */}
+      <div className="flex items-center justify-end w-9">
+        <UserButton
+          appearance={clerkAppearance}
+        />
+      </div>
     </header>
   )
 }
