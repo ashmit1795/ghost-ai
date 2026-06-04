@@ -1,8 +1,9 @@
 "use client"
 
-import React, { createContext, useContext, useState } from "react"
+import React, { createContext, useContext, useState, useEffect } from "react"
 import { useProjectActions, Project } from "@/hooks/use-project-actions"
 import { generateSlug } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 interface ProjectContextType {
   projects: Project[];
@@ -44,22 +45,38 @@ export type { Project }
 export function ProjectProvider({
   children,
   initialProjects,
+  activeProjectId,
 }: {
   children: React.ReactNode
   initialProjects: Project[]
+  activeProjectId?: string
 }) {
-  const [activeProject, setActiveProject] = useState<Project | null>(null)
+  const router = useRouter()
+  const [activeProject, setActiveProject] = useState<Project | null>(() => {
+    if (activeProjectId) {
+      return initialProjects.find((p) => p.id === activeProjectId) || null
+    }
+    return null
+  })
+
+  // Synchronize state when page routes change or new initialProjects load
+  useEffect(() => {
+    if (activeProjectId) {
+      const project = initialProjects.find((p) => p.id === activeProjectId)
+      setActiveProject(project || null)
+    } else {
+      setActiveProject(null)
+    }
+  }, [activeProjectId, initialProjects])
+
   const actions = useProjectActions(activeProject, setActiveProject)
 
   const openProject = (id: string) => {
-    const project = initialProjects.find((p) => p.id === id)
-    if (project) {
-      setActiveProject(project)
-    }
+    router.push(`/editor/${id}`)
   }
 
   const closeProject = () => {
-    setActiveProject(null)
+    router.push("/editor")
   }
 
   return (

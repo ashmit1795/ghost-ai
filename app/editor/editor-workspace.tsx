@@ -6,11 +6,13 @@ import { ProjectSidebar } from "@/components/editor/project-sidebar"
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
 import { Button } from "@/components/ui/button"
 import { ProjectProvider, useProjects, Project } from "@/contexts/project-context"
-import { Terminal, Sparkles, LayoutGrid, Plus } from "lucide-react"
+import { Sparkles, LayoutGrid, Plus } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 function EditorWorkspaceContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const { activeProject, closeProject, setCreateOpen } = useProjects()
+  const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(true)
+  const { activeProject, setCreateOpen } = useProjects()
 
   return (
     <div className="relative flex flex-col h-screen w-screen bg-base overflow-hidden text-copy-primary font-sans antialiased">
@@ -18,6 +20,9 @@ function EditorWorkspaceContent() {
       <EditorNavbar
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+        activeProject={activeProject}
+        isAiSidebarOpen={isAiSidebarOpen}
+        onToggleAiSidebar={() => setIsAiSidebarOpen((prev) => !prev)}
       />
 
       {/* Main Workspace Frame */}
@@ -29,112 +34,91 @@ function EditorWorkspaceContent() {
           onClose={() => setIsSidebarOpen(false)}
         />
 
-        {/* System Design Canvas Area */}
-        <main className="flex-1 relative bg-base flex items-center justify-center p-6 select-none overflow-hidden">
-          
-          {/* Subtle Grid Background Pattern */}
-          <div 
-            className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-            style={{
-              backgroundImage: `
-                linear-gradient(to right, var(--text-primary) 1px, transparent 1px),
-                linear-gradient(to bottom, var(--text-primary) 1px, transparent 1px)
-              `,
-              backgroundSize: "24px 24px"
-            }}
-          />
+        {/* Central Canvas and Right AI Sidebar Wrapper */}
+        <div className="flex-1 flex overflow-hidden bg-base">
+          {/* System Design Canvas Area */}
+          <main className="flex-1 relative bg-base flex items-center justify-center p-6 select-none overflow-hidden">
+            
+            {/* Subtle Grid Background Pattern */}
+            <div 
+              className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+              style={{
+                backgroundImage: `
+                  linear-gradient(to right, var(--text-primary) 1px, transparent 1px),
+                  linear-gradient(to bottom, var(--text-primary) 1px, transparent 1px)
+                `,
+                backgroundSize: "24px 24px"
+              }}
+            />
 
-          {/* Abstract background glows */}
-          <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-brand/5 opacity-[0.03] blur-[120px] pointer-events-none" />
-          <div className="absolute bottom-1/4 right-1/3 w-[600px] h-[600px] rounded-full bg-brand-ai/5 opacity-[0.03] blur-[150px] pointer-events-none" />
+            {/* Abstract background glows */}
+            <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-brand/5 opacity-[0.03] blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/3 w-[600px] h-[600px] rounded-full bg-brand-ai/5 opacity-[0.03] blur-[150px] pointer-events-none" />
 
-          {activeProject ? (
-            /* Active Project Workspace View */
-            <div className="relative max-w-2xl w-full mx-auto z-10 animate-in fade-in duration-300">
-              {/* Elegant outer glow */}
-              <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-r from-brand/20 via-brand-ai/20 to-brand/20 opacity-30 blur-xl transition duration-1000" />
-              
-              <div className="relative flex flex-col bg-surface/60 border border-surface-border rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
-                {/* Header Badge */}
-                <div className="flex items-center gap-2 self-start bg-brand-dim border border-brand/20 rounded-full px-3 py-1 mb-6">
-                  <Sparkles className="h-3 w-3 text-brand" />
-                  <span className="text-[10px] font-mono font-semibold tracking-wider text-brand uppercase">
-                    Active Workspace: {activeProject.slug}
-                  </span>
+            {activeProject ? (
+              /* Canvas active placeholder content */
+              <div className="relative text-center max-w-md mx-auto z-10 flex flex-col items-center gap-4 animate-in fade-in duration-300">
+                <div className="h-14 w-14 rounded-2xl bg-brand-dim border border-brand/20 flex items-center justify-center mb-2 shadow-lg shadow-brand/5">
+                  <LayoutGrid className="h-6 w-6 text-brand" />
                 </div>
-
-                {/* Title & Description */}
-                <h1 className="text-3xl font-extralight tracking-wide text-copy-primary mb-3">
-                  {activeProject.name}
+                <h1 className="text-xl font-medium tracking-wide text-copy-primary">
+                  Interactive Canvas
                 </h1>
-                <p className="text-sm text-copy-secondary leading-relaxed mb-6 font-light">
-                  Model and document your cloud architecture in real-time. Describe your requirements in plain English, edit visual elements on the canvas, and compile structural designs into structured technical specifications.
+                <p className="text-xs text-copy-secondary leading-relaxed font-light">
+                  System architecture workspace initialized for <span className="font-semibold text-brand">{activeProject.name}</span>. The collaborative React Flow layout and visual editor will render here.
                 </p>
-
-                {/* Grid actions / Status */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                  <div className="flex flex-col gap-2 p-4 bg-elevated/40 border border-surface-border-subtle rounded-2xl">
-                    <div className="flex items-center gap-2 text-copy-secondary">
-                      <LayoutGrid className="h-4 w-4 text-brand" />
-                      <span className="text-xs font-semibold">Interactive Visual Canvas</span>
-                    </div>
-                    <p className="text-[11px] text-copy-muted leading-normal font-light">
-                      Model complex system topologies using dynamic nodes, decision gateways, and database symbols on a multiplayer grid.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-2 p-4 bg-elevated/40 border border-surface-border-subtle rounded-2xl">
-                    <div className="flex items-center gap-2 text-copy-secondary">
-                      <Terminal className="h-4 w-4 text-brand-ai-text" />
-                      <span className="text-xs font-semibold">AI-Powered Orchestrator</span>
-                    </div>
-                    <p className="text-[11px] text-copy-muted leading-normal font-light">
-                      Prompt the system-level agent to automatically synthesize layout structures, API connections, and message queues.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    onClick={closeProject}
-                    variant="outline"
-                    className="border-surface-border text-copy-secondary hover:text-copy-primary hover:bg-subtle text-xs px-5 h-9 rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
-                  >
-                    Exit Workspace
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled={true}
-                    aria-disabled="true"
-                    title="Documentation coming soon"
-                    className="border-surface-border text-copy-secondary hover:text-copy-primary hover:bg-subtle text-xs px-5 h-9 rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
-                  >
-                    Developer Docs
-                  </Button>
+                <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-full bg-subtle border border-surface-border text-[10px] font-mono text-copy-muted select-text">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Room ID: {activeProject.id}
                 </div>
               </div>
-            </div>
-          ) : (
-            /* Minimal Card-Free Editor Home Screen (when no project is open) */
-            <div className="relative text-center max-w-md mx-auto z-10 flex flex-col items-center gap-4 animate-in fade-in duration-300">
-              <h1 className="text-3xl font-extralight tracking-wide text-copy-primary leading-tight">
-                Design your next <span className="font-semibold text-brand">system architecture</span>
-              </h1>
-              <p className="text-sm text-copy-secondary leading-relaxed font-light">
-                Start a new design sandbox, or choose a workspace from the sidebar to begin collaborative modeling.
-              </p>
-              <Button
-                onClick={() => setCreateOpen(true)}
-                className="mt-2 bg-brand hover:bg-brand/80 text-background text-xs font-semibold px-6 h-10 rounded-xl shadow-lg flex items-center gap-2 transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <Plus className="h-4 w-4" />
-                Initialize Workspace
-              </Button>
-            </div>
-          )}
+            ) : (
+              /* Minimal Card-Free Editor Home Screen (when no project is open) */
+              <div className="relative text-center max-w-md mx-auto z-10 flex flex-col items-center gap-4 animate-in fade-in duration-300">
+                <h1 className="text-3xl font-extralight tracking-wide text-copy-primary leading-tight">
+                  Design your next <span className="font-semibold text-brand">system architecture</span>
+                </h1>
+                <p className="text-sm text-copy-secondary leading-relaxed font-light">
+                  Start a new design sandbox, or choose a workspace from the sidebar to begin collaborative modeling.
+                </p>
+                <Button
+                  onClick={() => setCreateOpen(true)}
+                  className="mt-2 bg-brand hover:bg-brand/80 text-background text-xs font-semibold px-6 h-10 rounded-xl shadow-lg flex items-center gap-2 transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <Plus className="h-4 w-4" />
+                  Initialize Workspace
+                </Button>
+              </div>
+            )}
 
-        </main>
+          </main>
+
+          {/* Right AI Sidebar placeholder */}
+          {activeProject && (
+            <aside
+              className={cn(
+                "w-80 border-l border-surface-border bg-surface flex flex-col transition-all duration-300 ease-in-out shrink-0 select-none",
+                isAiSidebarOpen ? "translate-x-0 w-80" : "translate-x-full w-0 border-l-0 overflow-hidden"
+              )}
+            >
+              <div className="h-14 flex items-center justify-between px-4 border-b border-surface-border shrink-0">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-brand-ai-text" />
+                  <h2 className="text-sm font-semibold tracking-wider text-copy-primary uppercase">AI Copilot</h2>
+                </div>
+              </div>
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                <div className="h-12 w-12 rounded-full bg-brand-ai/15 border border-brand-ai/20 flex items-center justify-center mb-4">
+                  <Sparkles className="h-5 w-5 text-brand-ai-text" />
+                </div>
+                <h3 className="text-xs font-semibold text-copy-secondary mb-1">AI Assistant</h3>
+                <p className="text-[11px] text-copy-faint leading-relaxed max-w-[200px]">
+                  Ghost AI chat sidebar will render here. Describe your system requirements or prompt architectural changes.
+                </p>
+              </div>
+            </aside>
+          )}
+        </div>
       </div>
 
       {/* Global Dialog Overlays */}
@@ -143,9 +127,15 @@ function EditorWorkspaceContent() {
   )
 }
 
-export function EditorWorkspace({ initialProjects }: { initialProjects: Project[] }) {
+export function EditorWorkspace({ 
+  initialProjects,
+  activeProjectId,
+}: { 
+  initialProjects: Project[]
+  activeProjectId?: string
+}) {
   return (
-    <ProjectProvider initialProjects={initialProjects}>
+    <ProjectProvider initialProjects={initialProjects} activeProjectId={activeProjectId}>
       <EditorWorkspaceContent />
     </ProjectProvider>
   )
