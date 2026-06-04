@@ -151,7 +151,7 @@ export function ProjectDialogs() {
                 Rename <span className="font-semibold text-brand">workspace</span>
               </DialogTitle>
               <DialogDescription className="text-xs text-copy-muted font-light">
-                Modify the public identifier and system routing resource slug of this architecture workspace.
+                Modify the display name of this workspace. The workspace URL identifier and system resources will remain unchanged.
               </DialogDescription>
             </DialogHeader>
 
@@ -172,10 +172,15 @@ export function ProjectDialogs() {
                 />
               </div>
 
-              {projectName.trim() && (
-                <div className="rounded-xl bg-base border border-surface-border-subtle p-3 text-[11px] font-mono text-copy-muted break-all">
-                  <span className="text-copy-faint">New slug:</span>{" "}
-                  <span className="text-brand font-semibold">{projectSlug}</span>
+              {targetProject && (
+                <div className="rounded-xl bg-base border border-surface-border-subtle p-3 text-[11px] font-mono text-copy-muted break-all flex flex-col gap-1">
+                  <div>
+                    <span className="text-copy-faint">Workspace URL identifier:</span>{" "}
+                    <span className="text-copy-secondary font-semibold">{targetProject.slug}</span>
+                  </div>
+                  <span className="text-[10px] text-copy-faint italic mt-1 block">
+                    * The URL identifier is immutable and cannot be changed after creation.
+                  </span>
                 </div>
               )}
             </div>
