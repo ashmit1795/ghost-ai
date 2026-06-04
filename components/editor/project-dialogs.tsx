@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useProjects } from "@/context/project-context"
+import { useProjects } from "@/contexts/project-context"
 import { AlertTriangle } from "lucide-react"
 
 export function ProjectDialogs() {

@@ -5,7 +5,7 @@ import { EditorNavbar } from "@/components/editor/editor-navbar"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
 import { Button } from "@/components/ui/button"
-import { ProjectProvider, useProjects } from "@/context/project-context"
+import { ProjectProvider, useProjects } from "@/contexts/project-context"
 import { Terminal, Sparkles, LayoutGrid, Plus } from "lucide-react"
 
 function EditorWorkspace() {

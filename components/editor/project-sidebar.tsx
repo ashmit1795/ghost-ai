@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FolderOpen, Plus, Users, X, Edit2, Trash2, Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useProjects } from "@/context/project-context"
+import { useProjects } from "@/contexts/project-context"
 
 interface ProjectSidebarProps {
   isOpen: boolean;
