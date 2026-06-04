@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Malformed JSON payload' }, { status: 400 })
   }
 
-  if (typeof body !== 'object' || body === null) {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     return Response.json({ error: 'Payload must be an object' }, { status: 400 })
   }
 

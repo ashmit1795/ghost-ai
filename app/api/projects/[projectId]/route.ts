@@ -34,7 +34,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       body = {}
     }
 
-    if (typeof body !== 'object' || body === null) {
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
       return Response.json({ error: 'Invalid payload' }, { status: 400 })
     }
 
