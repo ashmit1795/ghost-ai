@@ -21,7 +21,7 @@ Create `components/editor/access-denied.tsx` with:
 
 Create `lib/project-access.ts` with helpers for:
 
-- getting current Clerk identity: `userId` + primary email
+- getting current Clerk identity: `userId` + all verified email addresses
 - checking project access by owner or collaborator
 
 ## Layout

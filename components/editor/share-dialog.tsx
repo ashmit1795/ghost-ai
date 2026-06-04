@@ -44,25 +44,43 @@ export function ShareDialog() {
   useEffect(() => {
     if (!shareOpen || !activeProject) return
 
+    const controller = new AbortController()
+    const currentProjectId = activeProject.id
+    let active = true
+
     const fetchCollaborators = async () => {
       setIsFetching(true)
       setError(null)
       try {
-        const res = await fetch(`/api/projects/${activeProject.id}/collaborators`)
+        const res = await fetch(`/api/projects/${currentProjectId}/collaborators`, {
+          signal: controller.signal,
+        })
         if (!res.ok) {
           throw new Error("Failed to load collaborators")
         }
         const data = await res.json()
-        setCollaborators(data)
+        if (active && activeProject.id === currentProjectId) {
+          setCollaborators(data)
+        }
       } catch (err: any) {
+        if (err.name === "AbortError") return
         console.error(err)
-        setError(err.message || "An error occurred while loading collaborators")
+        if (active && activeProject.id === currentProjectId) {
+          setError(err.message || "An error occurred while loading collaborators")
+        }
       } finally {
-        setIsFetching(false)
+        if (active && activeProject.id === currentProjectId) {
+          setIsFetching(false)
+        }
       }
     }
 
     fetchCollaborators()
+
+    return () => {
+      active = false
+      controller.abort()
+    }
   }, [shareOpen, activeProject])
 
   // Reset form state on close

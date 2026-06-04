@@ -1,6 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { checkProjectAccess } from "@/lib/project-access"
+import { Prisma } from "@/app/generated/prisma/client"
 
 interface RouteParams {
   params: Promise<{
@@ -11,13 +12,13 @@ interface RouteParams {
 export async function GET(req: Request, { params }: RouteParams) {
   const { projectId } = await params
 
-  // 1. Verify project access
-  const access = await checkProjectAccess(projectId)
-  if (!access.hasAccess || !access.project) {
-    return Response.json({ error: "Forbidden" }, { status: 403 })
-  }
-
   try {
+    // 1. Verify project access
+    const access = await checkProjectAccess(projectId)
+    if (!access.hasAccess || !access.project) {
+      return Response.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     const collaborators = await prisma.projectCollaborator.findMany({
       where: { projectId },
       orderBy: { createdAt: "asc" },
@@ -56,16 +57,16 @@ export async function GET(req: Request, { params }: RouteParams) {
 export async function POST(req: Request, { params }: RouteParams) {
   const { projectId } = await params
 
-  // 1. Verify requester is the project owner
-  const access = await checkProjectAccess(projectId)
-  if (!access.hasAccess || !access.project) {
-    return Response.json({ error: "Project not found" }, { status: 404 })
-  }
-  if (!access.isOwner) {
-    return Response.json({ error: "Forbidden: Only owners can invite collaborators" }, { status: 403 })
-  }
-
   try {
+    // 1. Verify requester is the project owner
+    const access = await checkProjectAccess(projectId)
+    if (!access.hasAccess || !access.project) {
+      return Response.json({ error: "Project not found" }, { status: 404 })
+    }
+    if (!access.isOwner) {
+      return Response.json({ error: "Forbidden: Only owners can invite collaborators" }, { status: 403 })
+    }
+
     const body = await req.json().catch(() => ({}))
     const email = body.email?.trim().toLowerCase()
 
@@ -87,7 +88,7 @@ export async function POST(req: Request, { params }: RouteParams) {
       return Response.json({ error: "You cannot invite the owner of the workspace" }, { status: 400 })
     }
 
-    // 3. Check if already a collaborator
+    // 3. Check if already a collaborator (pre-check optimization)
     const existing = await prisma.projectCollaborator.findUnique({
       where: {
         projectId_email: { projectId, email },
@@ -98,13 +99,23 @@ export async function POST(req: Request, { params }: RouteParams) {
       return Response.json({ error: "User is already a collaborator" }, { status: 400 })
     }
 
-    // 4. Create collaborator in database
-    const collaborator = await prisma.projectCollaborator.create({
-      data: {
-        projectId,
-        email,
-      },
-    })
+    // 4. Create collaborator in database (wrapped for concurrency protection)
+    let collaborator
+    try {
+      collaborator = await prisma.projectCollaborator.create({
+        data: {
+          projectId,
+          email,
+        },
+      })
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === "P2002") {
+          return Response.json({ error: "User is already a collaborator" }, { status: 400 })
+        }
+      }
+      throw err // Rethrow to let the outer catch block map it to 500
+    }
 
     // 5. Query Clerk to return enriched data immediately
     const clerkUsers = await client.users.getUserList({
@@ -132,16 +143,16 @@ export async function POST(req: Request, { params }: RouteParams) {
 export async function DELETE(req: Request, { params }: RouteParams) {
   const { projectId } = await params
 
-  // 1. Verify requester is the project owner
-  const access = await checkProjectAccess(projectId)
-  if (!access.hasAccess || !access.project) {
-    return Response.json({ error: "Project not found" }, { status: 404 })
-  }
-  if (!access.isOwner) {
-    return Response.json({ error: "Forbidden: Only owners can remove collaborators" }, { status: 403 })
-  }
-
   try {
+    // 1. Verify requester is the project owner
+    const access = await checkProjectAccess(projectId)
+    if (!access.hasAccess || !access.project) {
+      return Response.json({ error: "Project not found" }, { status: 404 })
+    }
+    if (!access.isOwner) {
+      return Response.json({ error: "Forbidden: Only owners can remove collaborators" }, { status: 403 })
+    }
+
     const body = await req.json().catch(() => ({}))
     const { id } = body
 

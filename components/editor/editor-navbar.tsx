@@ -87,6 +87,7 @@ export function EditorNavbar({
                 isAiSidebarOpen && "text-brand-ai-text bg-brand-ai/15"
               )}
               aria-label={isAiSidebarOpen ? "Close AI Sidebar" : "Open AI Sidebar"}
+              aria-pressed={isAiSidebarOpen}
             >
               <Sparkles className="h-4 w-4" />
             </Button>

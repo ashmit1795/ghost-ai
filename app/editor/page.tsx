@@ -10,7 +10,7 @@ export default async function EditorPage() {
   }
 
   const user = await currentUser()
-  const emailAddresses = user?.emailAddresses.map((e) => e.emailAddress) || []
+  const emailAddresses = user?.emailAddresses.map((e) => e.emailAddress.trim().toLowerCase()) || []
 
   // Fetch owned projects
   const ownedProjects = await prisma.project.findMany({

@@ -2,7 +2,6 @@
 
 import { Lock, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 
 export function AccessDenied() {
   return (
@@ -41,14 +40,13 @@ export function AccessDenied() {
             You do not have permission to view this workspace, or this project resource does not exist. Please contact the owner or return to your workspaces dashboard.
           </p>
 
-          {/* Back Action Button */}
-          <Link href="/editor" passHref className="w-full">
-            <Button
-              className="w-full bg-subtle hover:bg-subtle/80 text-copy-primary border border-surface-border text-xs font-semibold px-6 h-10 rounded-xl flex items-center justify-center gap-2 transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <ArrowLeft className="h-4 w-4 text-brand" />
-              Return to Workspaces
-            </Button>
+          {/* Back Action Link Styled as Button */}
+          <Link 
+            href="/editor" 
+            className="w-full bg-subtle hover:bg-subtle/80 text-copy-primary border border-surface-border text-xs font-semibold px-6 h-10 rounded-xl flex items-center justify-center gap-2 transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ArrowLeft className="h-4 w-4 text-brand" />
+            Return to Workspaces
           </Link>
         </div>
       </div>

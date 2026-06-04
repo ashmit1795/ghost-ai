@@ -1,10 +1,11 @@
 import { auth, currentUser } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@/app/generated/prisma/client"
 
 export interface ProjectAccess {
   hasAccess: boolean
   isOwner: boolean
-  project: any // Can be typed as imported project models if needed
+  project: Prisma.ProjectGetPayload<{ include: { collaborators: true } }> | null
 }
 
 export async function getClerkIdentity() {
@@ -13,7 +14,7 @@ export async function getClerkIdentity() {
     return { userId: null, emailAddresses: [] }
   }
   const user = await currentUser()
-  const emailAddresses = user?.emailAddresses.map((e) => e.emailAddress) || []
+  const emailAddresses = user?.emailAddresses.map((e) => e.emailAddress.trim().toLowerCase()) || []
   return { userId, emailAddresses }
 }
 
@@ -40,7 +41,7 @@ export async function checkProjectAccess(roomId: string): Promise<ProjectAccess>
     }
 
     const isCollaborator = project.collaborators.some((collab) =>
-      emailAddresses.includes(collab.email)
+      emailAddresses.includes(collab.email.trim().toLowerCase())
     )
 
     if (isCollaborator) {
@@ -50,6 +51,7 @@ export async function checkProjectAccess(roomId: string): Promise<ProjectAccess>
     return { hasAccess: false, isOwner: false, project: null }
   } catch (error) {
     console.error("Failed to check project access:", error)
-    return { hasAccess: false, isOwner: false, project: null }
+    throw error // Rethrow to preserve error detail for callers to map to 500
   }
 }
+

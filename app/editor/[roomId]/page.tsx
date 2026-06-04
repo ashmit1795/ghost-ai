@@ -26,7 +26,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
   }
 
   const user = await currentUser()
-  const emailAddresses = user?.emailAddresses.map((e) => e.emailAddress) || []
+  const emailAddresses = user?.emailAddresses.map((e) => e.emailAddress.trim().toLowerCase()) || []
 
   // 2. Fetch projects for user (matching layout options)
   const ownedProjects = await prisma.project.findMany({
