@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { useProjects } from "@/contexts/project-context"
 import { AlertTriangle } from "lucide-react"
+import { ShareDialog } from "./share-dialog"
 
 export function ProjectDialogs() {
   const {
@@ -290,6 +291,10 @@ export function ProjectDialogs() {
           </form>
         </DialogContent>
       </Dialog>
+      
+      {/* 4. Share Collaborators Dialog */}
+      <ShareDialog />
     </>
   )
 }
+

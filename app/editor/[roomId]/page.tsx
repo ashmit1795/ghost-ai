@@ -1,9 +1,25 @@
 import { auth, currentUser } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
-import { EditorWorkspace } from "./editor-workspace"
+import { checkProjectAccess } from "@/lib/project-access"
+import { AccessDenied } from "@/components/editor/access-denied"
+import { EditorWorkspace } from "../editor-workspace"
 import { redirect } from "next/navigation"
 
-export default async function EditorPage() {
+interface RoomPageProps {
+  params: Promise<{
+    roomId: string
+  }>
+}
+
+export default async function RoomPage({ params }: RoomPageProps) {
+  const { roomId } = await params
+  
+  // 1. Validate project access and existence
+  const access = await checkProjectAccess(roomId)
+  if (!access.hasAccess || !access.project) {
+    return <AccessDenied />
+  }
+
   const { userId } = await auth()
   if (!userId) {
     redirect("/sign-in")
@@ -12,13 +28,12 @@ export default async function EditorPage() {
   const user = await currentUser()
   const emailAddresses = user?.emailAddresses.map((e) => e.emailAddress.trim().toLowerCase()) || []
 
-  // Fetch owned projects
+  // 2. Fetch projects for user (matching layout options)
   const ownedProjects = await prisma.project.findMany({
     where: { ownerId: userId },
     orderBy: { createdAt: "desc" },
   })
 
-  // Fetch shared projects
   const sharedProjects = await prisma.project.findMany({
     where: {
       collaborators: {
@@ -32,13 +47,12 @@ export default async function EditorPage() {
 
   const ownedIds = new Set(ownedProjects.map((p) => p.id))
 
-  // Combine into Project[] shapes
   const initialProjects = [
     ...ownedProjects.map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description,
-      slug: p.id, // Project ID and Liveblocks room ID are aligned and immutable
+      slug: p.id,
       isOwner: true,
     })),
     ...sharedProjects
@@ -52,5 +66,10 @@ export default async function EditorPage() {
       })),
   ]
 
-  return <EditorWorkspace initialProjects={initialProjects} />
+  return (
+    <EditorWorkspace 
+      initialProjects={initialProjects} 
+      activeProjectId={roomId} 
+    />
+  )
 }

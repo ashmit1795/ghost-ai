@@ -67,22 +67,13 @@ export function useProjectActions(
 
       const newProject = await res.json()
       
-      // Update active project (navigate to new workspace)
-      setActiveProject({
-        id: newProject.id,
-        name: newProject.name,
-        description: newProject.description,
-        slug: newProject.id, // Align slug with immutable project ID
-        isOwner: true,
-      })
-
       // Clean up form
       setProjectName("")
       setProjectDescription("")
       setCreateOpen(false)
       
-      // Refresh page data
-      router.refresh()
+      // Redirect to the new workspace page
+      router.push(`/editor/${newProject.id}`)
     } catch (error) {
       console.error("Error creating project:", error)
     } finally {
@@ -145,15 +136,16 @@ export function useProjectActions(
         throw new Error(errorData.error || "Failed to delete project")
       }
 
-      // If active project is deleted, redirect to /editor (clear active project)
+      // If active project is deleted, redirect to /editor
       if (activeProject && activeProject.id === id) {
-        setActiveProject(null)
+        router.push("/editor")
+      } else {
+        // Only refresh list if not navigating away
+        router.refresh()
       }
 
       setTargetProjectId(null)
       setDeleteOpen(false)
-      
-      router.refresh()
     } catch (error) {
       console.error("Error deleting project:", error)
     } finally {

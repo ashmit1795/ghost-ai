@@ -1,16 +1,29 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { PanelLeftClose, PanelLeftOpen, Share2, Sparkles } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import { clerkAppearance } from "@/lib/clerk-theme"
+import { Project } from "@/hooks/use-project-actions"
+import { cn } from "@/lib/utils"
+import { useProjects } from "@/contexts/project-context"
 
 interface EditorNavbarProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
+  activeProject?: Project | null;
+  isAiSidebarOpen?: boolean;
+  onToggleAiSidebar?: () => void;
 }
 
-export function EditorNavbar({ isSidebarOpen, onToggleSidebar }: EditorNavbarProps) {
+export function EditorNavbar({
+  isSidebarOpen,
+  onToggleSidebar,
+  activeProject = null,
+  isAiSidebarOpen = false,
+  onToggleAiSidebar,
+}: EditorNavbarProps) {
+  const { setShareOpen } = useProjects()
   return (
     <header className="h-14 flex items-center justify-between px-4 bg-surface border-b border-surface-border text-copy-primary select-none z-20 shrink-0">
       {/* Left section: Sidebar toggle button */}
@@ -30,19 +43,62 @@ export function EditorNavbar({ isSidebarOpen, onToggleSidebar }: EditorNavbarPro
         </Button>
       </div>
 
-      {/* Center section: Logo or System Title */}
+      {/* Center section: Logo or Active Project Name */}
       <div className="flex items-center gap-1.5 font-sans tracking-wide">
         <span className="text-sm font-light text-copy-muted uppercase tracking-[0.2em]">ghost</span>
         <span className="text-sm font-semibold text-brand uppercase tracking-[0.2em]">AI</span>
-        <div className="w-[1px] h-3 bg-surface-border-subtle mx-2" />
-        <span className="text-xs font-mono text-copy-faint tracking-tight font-medium">Workspace</span>
+        {activeProject ? (
+          <>
+            <div className="w-[1px] h-3 bg-surface-border-subtle mx-2" />
+            <span className="text-xs font-mono text-copy-secondary font-medium truncate max-w-[180px]" title={activeProject.name}>
+              {activeProject.name}
+            </span>
+          </>
+        ) : (
+          <>
+            <div className="w-[1px] h-3 bg-surface-border-subtle mx-2" />
+            <span className="text-xs font-mono text-copy-faint tracking-tight font-medium">Workspace</span>
+          </>
+        )}
       </div>
 
-      {/* Right section: User Profile Menu */}
-      <div className="flex items-center justify-end w-9">
-        <UserButton
-          appearance={clerkAppearance}
-        />
+      {/* Right section: Actions + User Profile */}
+      <div className="flex items-center gap-3">
+        {activeProject && (
+          <>
+            {/* Share Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShareOpen(true)}
+              className="h-8 border-surface-border hover:bg-subtle text-xs px-3 rounded-lg flex items-center gap-1.5 text-copy-secondary hover:text-copy-primary transition-all duration-200 font-medium"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              <span>Share</span>
+            </Button>
+            
+            {/* AI Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onToggleAiSidebar}
+              className={cn(
+                "h-8 w-8 text-copy-muted hover:text-copy-primary hover:bg-subtle rounded-lg transition-colors duration-200",
+                isAiSidebarOpen && "text-brand-ai-text bg-brand-ai/15"
+              )}
+              aria-label={isAiSidebarOpen ? "Close AI Sidebar" : "Open AI Sidebar"}
+              aria-pressed={isAiSidebarOpen}
+            >
+              <Sparkles className="h-4 w-4" />
+            </Button>
+          </>
+        )}
+        <div className="w-[1px] h-4 bg-surface-border-subtle mx-1" />
+        <div className="flex items-center justify-end w-9">
+          <UserButton
+            appearance={clerkAppearance}
+          />
+        </div>
       </div>
     </header>
   )
