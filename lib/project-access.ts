@@ -10,16 +10,11 @@ export interface ProjectAccess {
 
 export async function getClerkIdentity() {
   const { userId } = await auth()
-  if (!userId) {
-    return { userId: null, emailAddresses: [] }
-  }
-  const user = await currentUser()
-  const emailAddresses = user?.emailAddresses.map((e) => e.emailAddress.trim().toLowerCase()) || []
-  return { userId, emailAddresses }
+  return { userId: userId || null }
 }
 
 export async function checkProjectAccess(roomId: string): Promise<ProjectAccess> {
-  const { userId, emailAddresses } = await getClerkIdentity()
+  const { userId } = await getClerkIdentity()
   if (!userId) {
     return { hasAccess: false, isOwner: false, project: null }
   }
@@ -40,6 +35,10 @@ export async function checkProjectAccess(roomId: string): Promise<ProjectAccess>
       return { hasAccess: true, isOwner: true, project }
     }
 
+    // Defer fetching user email addresses until ownership check fails
+    const user = await currentUser()
+    const emailAddresses = user?.emailAddresses.map((e) => e.emailAddress.trim().toLowerCase()) || []
+
     const isCollaborator = project.collaborators.some((collab) =>
       emailAddresses.includes(collab.email.trim().toLowerCase())
     )
@@ -54,4 +53,5 @@ export async function checkProjectAccess(roomId: string): Promise<ProjectAccess>
     throw error // Rethrow to preserve error detail for callers to map to 500
   }
 }
+
 

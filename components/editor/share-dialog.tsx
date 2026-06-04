@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import Image from "next/image"
 import {
   Dialog,
   DialogContent,
@@ -36,7 +37,11 @@ export function ShareDialog() {
   // Set the window origin safely on the client to prevent SSR reference errors
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setOrigin(window.location.origin)
+      const currentOrigin = window.location.origin
+      // Defer state update to avoid synchronous cascading renders in effect body
+      setTimeout(() => {
+        setOrigin(currentOrigin)
+      }, 0)
     }
   }, [])
 
@@ -62,11 +67,18 @@ export function ShareDialog() {
         if (active && activeProject.id === currentProjectId) {
           setCollaborators(data)
         }
-      } catch (err: any) {
-        if (err.name === "AbortError") return
-        console.error(err)
-        if (active && activeProject.id === currentProjectId) {
-          setError(err.message || "An error occurred while loading collaborators")
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          if (err.name === "AbortError") return
+          console.error(err)
+          if (active && activeProject.id === currentProjectId) {
+            setError(err.message || "An error occurred while loading collaborators")
+          }
+        } else {
+          console.error(err)
+          if (active && activeProject.id === currentProjectId) {
+            setError("An error occurred while loading collaborators")
+          }
         }
       } finally {
         if (active && activeProject.id === currentProjectId) {
@@ -83,14 +95,15 @@ export function ShareDialog() {
     }
   }, [shareOpen, activeProject])
 
-  // Reset form state on close
-  useEffect(() => {
-    if (!shareOpen) {
+  // Reset form state on close via dialog open change callback
+  const handleOpenChange = (open: boolean) => {
+    setShareOpen(open)
+    if (!open) {
       setInviteEmail("")
       setError(null)
       setCopied(false)
     }
-  }, [shareOpen])
+  }
 
   if (!activeProject) return null
 
@@ -111,11 +124,12 @@ export function ShareDialog() {
     e.preventDefault()
     if (!inviteEmail.trim() || isInviting) return
 
+    const projectId = activeProject.id
     setIsInviting(true)
     setError(null)
 
     try {
-      const res = await fetch(`/api/projects/${activeProject.id}/collaborators`, {
+      const res = await fetch(`/api/projects/${projectId}/collaborators`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -129,24 +143,35 @@ export function ShareDialog() {
         throw new Error(data.error || "Failed to invite collaborator")
       }
 
-      // Add to list and clear input
-      setCollaborators((prev) => [...prev, data])
-      setInviteEmail("")
-    } catch (err: any) {
-      setError(err.message || "An error occurred during invitation")
+      if (activeProject.id === projectId) {
+        setCollaborators((prev) => [...prev, data])
+        setInviteEmail("")
+      }
+    } catch (err: unknown) {
+      if (activeProject.id === projectId) {
+        if (err instanceof Error) {
+          setError(err.message || "An error occurred during invitation")
+        } else {
+          setError("An error occurred during invitation")
+        }
+      }
+      console.error(err)
     } finally {
-      setIsInviting(false)
+      if (activeProject.id === projectId) {
+        setIsInviting(false)
+      }
     }
   }
 
   const handleRemove = async (id: string) => {
     if (removingId || !window.confirm("Are you sure you want to revoke access for this collaborator? This action is irreversible.")) return
 
+    const projectId = activeProject.id
     setRemovingId(id)
     setError(null)
 
     try {
-      const res = await fetch(`/api/projects/${activeProject.id}/collaborators`, {
+      const res = await fetch(`/api/projects/${projectId}/collaborators`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -159,17 +184,27 @@ export function ShareDialog() {
         throw new Error(data.error || "Failed to remove collaborator")
       }
 
-      // Remove from list
-      setCollaborators((prev) => prev.filter((c) => c.id !== id))
-    } catch (err: any) {
-      setError(err.message || "An error occurred during removal")
+      if (activeProject.id === projectId) {
+        setCollaborators((prev) => prev.filter((c) => c.id !== id))
+      }
+    } catch (err: unknown) {
+      if (activeProject.id === projectId) {
+        if (err instanceof Error) {
+          setError(err.message || "An error occurred during removal")
+        } else {
+          setError("An error occurred during removal")
+        }
+      }
+      console.error(err)
     } finally {
-      setRemovingId(null)
+      if (activeProject.id === projectId) {
+        setRemovingId(null)
+      }
     }
   }
 
   return (
-    <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+    <Dialog open={shareOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="border-surface-border bg-surface text-copy-primary rounded-3xl max-w-md p-6 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         <DialogHeader className="shrink-0 mb-2">
           <DialogTitle className="text-lg font-light tracking-wide text-copy-primary flex items-center gap-2">
@@ -279,9 +314,12 @@ export function ShareDialog() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {collab.imageUrl ? (
-                      <img
+                      <Image
                         src={collab.imageUrl}
                         alt={collab.name || collab.email}
+                        width={32}
+                        height={32}
+                        unoptimized
                         className="h-8 w-8 rounded-full border border-surface-border-subtle shrink-0"
                       />
                     ) : (
