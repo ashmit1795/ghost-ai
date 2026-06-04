@@ -33,10 +33,29 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  let body: any
   try {
-    const body = await req.json().catch(() => ({}))
-    const projectName = body.name?.trim() || 'Untitled Project'
-    const projectDescription = body.description?.trim() || null
+    body = await req.json()
+  } catch {
+    return Response.json({ error: 'Malformed JSON payload' }, { status: 400 })
+  }
+
+  if (typeof body !== 'object' || body === null) {
+    return Response.json({ error: 'Payload must be an object' }, { status: 400 })
+  }
+
+  if ('name' in body && typeof body.name !== 'string') {
+    return Response.json({ error: 'Project name must be a string' }, { status: 400 })
+  }
+
+  if ('description' in body && body.description !== null && typeof body.description !== 'string') {
+    return Response.json({ error: 'Description must be a string' }, { status: 400 })
+  }
+
+  const projectName = body.name?.trim() || 'Untitled Project'
+  const projectDescription = body.description !== undefined && body.description !== null ? body.description.trim() : null
+
+  try {
 
     const project = await prisma.project.create({
       data: {

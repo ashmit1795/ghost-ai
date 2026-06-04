@@ -27,16 +27,34 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await req.json().catch(() => ({}))
-    if (!body.name?.trim()) {
-      return Response.json({ error: 'Project name is required' }, { status: 400 })
+    let body: any
+    try {
+      body = await req.json()
+    } catch {
+      body = {}
+    }
+
+    if (typeof body !== 'object' || body === null) {
+      return Response.json({ error: 'Invalid payload' }, { status: 400 })
+    }
+
+    if ('name' in body) {
+      if (typeof body.name !== 'string' || !body.name.trim()) {
+        return Response.json({ error: 'Project name is required' }, { status: 400 })
+      }
+    }
+
+    if ('description' in body) {
+      if (body.description !== null && typeof body.description !== 'string') {
+        return Response.json({ error: 'Description must be a string' }, { status: 400 })
+      }
     }
 
     const updatedProject = await prisma.project.update({
       where: { id: projectId },
       data: {
-        name: body.name.trim(),
-        description: body.description !== undefined ? body.description : project.description,
+        name: body.name !== undefined ? body.name.trim() : project.name,
+        description: body.description !== undefined ? (body.description === null ? null : body.description.trim()) : project.description,
       }
     })
     return Response.json(updatedProject)
