@@ -1,13 +1,8 @@
 "use client"
 
 import React, { createContext, useContext, useState } from "react"
-
-export interface Project {
-  id: string;
-  name: string;
-  slug: string;
-  isOwner: boolean;
-}
+import { useProjectActions, Project } from "@/hooks/use-project-actions"
+import { generateSlug } from "@/lib/utils"
 
 interface ProjectContextType {
   projects: Project[];
@@ -26,13 +21,15 @@ interface ProjectContextType {
   // Form State
   projectName: string;
   setProjectName: (name: string) => void;
+  projectDescription: string;
+  setProjectDescription: (description: string) => void;
   projectSlug: string;
   targetProjectId: string | null;
   setTargetProjectId: (id: string | null) => void;
   
   // Actions
-  handleCreateProject: (name: string) => Promise<void>;
-  handleRenameProject: (id: string, newName: string) => Promise<void>;
+  handleCreateProject: (name: string, description?: string) => Promise<void>;
+  handleRenameProject: (id: string, newName: string, newDescription?: string) => Promise<void>;
   handleDeleteProject: (id: string) => Promise<void>;
   
   // Loading State
@@ -41,43 +38,21 @@ interface ProjectContextType {
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 
-const INITIAL_PROJECTS: Project[] = [
-  { id: "1", name: "Global Checkout Orchestration", slug: "global-checkout-orchestration", isOwner: true },
-  { id: "2", name: "Edge Identity Gateway", slug: "edge-identity-gateway", isOwner: true },
-  { id: "3", name: "Real-Time Telemetry Mesh", slug: "real-time-telemetry-mesh", isOwner: false },
-  { id: "4", name: "Durable Ingestion Engine", slug: "durable-ingestion-engine", isOwner: false },
-]
+export { generateSlug }
+export type { Project }
 
-export const generateSlug = (name: string): string => {
-  const computed = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "") // remove non-alphanumeric except spaces/hyphens
-    .replace(/[\s_]+/g, "-")      // replace spaces/underscores with hyphens
-    .replace(/-+/g, "-")          // remove duplicate hyphens
-    .replace(/^-+|-+$/g, "")      // trim hyphens from start/end
-  
-  return computed || "workspace"
-}
-
-export function ProjectProvider({ children }: { children: React.ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS)
+export function ProjectProvider({
+  children,
+  initialProjects,
+}: {
+  children: React.ReactNode
+  initialProjects: Project[]
+}) {
   const [activeProject, setActiveProject] = useState<Project | null>(null)
-  
-  // Dialog states
-  const [createOpen, setCreateOpen] = useState(false)
-  const [renameOpen, setRenameOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  
-  // Form/Target states
-  const [projectName, setProjectName] = useState("")
-  const [targetProjectId, setTargetProjectId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-
-  const projectSlug = generateSlug(projectName)
+  const actions = useProjectActions(activeProject, setActiveProject)
 
   const openProject = (id: string) => {
-    const project = projects.find((p) => p.id === id)
+    const project = initialProjects.find((p) => p.id === id)
     if (project) {
       setActiveProject(project)
     }
@@ -87,101 +62,14 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     setActiveProject(null)
   }
 
-  const handleCreateProject = async (name: string) => {
-    setIsLoading(true)
-    // Simulate minor async transition
-    await new Promise((resolve) => setTimeout(resolve, 600))
-    
-    const baseSlug = generateSlug(name)
-    
-    // Ensure slug uniqueness among existing projects
-    let uniqueSlug = baseSlug
-    const existingSlugs = new Set(projects.map((p) => p.slug))
-    while (existingSlugs.has(uniqueSlug)) {
-      const randomSuffix = Math.random().toString(36).substring(2, 7) // 5 character random suffix
-      uniqueSlug = `${baseSlug}-${randomSuffix}`
-    }
-    
-    const newProject: Project = {
-      id: Math.random().toString(36).substring(2, 9),
-      name: name.trim(),
-      slug: uniqueSlug,
-      isOwner: true,
-    }
-    
-    setProjects((prev) => [...prev, newProject])
-    setActiveProject(newProject)
-    setProjectName("")
-    setCreateOpen(false)
-    setIsLoading(false)
-  }
-
-  const handleRenameProject = async (id: string, newName: string) => {
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 600))
-    
-    const updatedName = newName.trim()
-    const baseSlug = generateSlug(updatedName)
-    
-    // Ensure slug uniqueness among other projects
-    let uniqueSlug = baseSlug
-    const existingSlugs = new Set(projects.filter((p) => p.id !== id).map((p) => p.slug))
-    while (existingSlugs.has(uniqueSlug)) {
-      const randomSuffix = Math.random().toString(36).substring(2, 7) // 5 character random suffix
-      uniqueSlug = `${baseSlug}-${randomSuffix}`
-    }
-    
-    setProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, name: updatedName, slug: uniqueSlug } : p))
-    )
-    
-    // Update active project if it was renamed
-    setActiveProject((prev) =>
-      prev && prev.id === id ? { ...prev, name: updatedName, slug: uniqueSlug } : prev
-    )
-    
-    setProjectName("")
-    setTargetProjectId(null)
-    setRenameOpen(false)
-    setIsLoading(false)
-  }
-
-  const handleDeleteProject = async (id: string) => {
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 600))
-    
-    setProjects((prev) => prev.filter((p) => p.id !== id))
-    
-    // Close active project if it was deleted
-    setActiveProject((prev) => (prev && prev.id === id ? null : prev))
-    
-    setTargetProjectId(null)
-    setDeleteOpen(false)
-    setIsLoading(false)
-  }
-
   return (
     <ProjectContext.Provider
       value={{
-        projects,
+        projects: initialProjects,
         activeProject,
         openProject,
         closeProject,
-        createOpen,
-        setCreateOpen,
-        renameOpen,
-        setRenameOpen,
-        deleteOpen,
-        setDeleteOpen,
-        projectName,
-        setProjectName,
-        projectSlug,
-        targetProjectId,
-        setTargetProjectId,
-        handleCreateProject,
-        handleRenameProject,
-        handleDeleteProject,
-        isLoading,
+        ...actions,
       }}
     >
       {children}

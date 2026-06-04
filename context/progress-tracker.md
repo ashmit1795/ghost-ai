@@ -19,6 +19,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` SaaS Copywriting & Design Refinement (Refactored project to workspace terminology, aligned tags/taglines/descriptions, improved empty states, and redesigned global error view)
 - `[x]` Database Schema & Prisma Client Singleton (Model definitions, prisma.config.ts, lib/prisma.ts, migration runs)
 - `[x]` Project REST API Routes (GET /api/projects, POST /api/projects, PATCH /api/projects/[projectId], DELETE /api/projects/[projectId])
+- `[x]` Editor Home Integration & Project Mutations Hook (Server-side project fetching, hooks/use-project-actions.ts custom mutation hook, alignment of project ID and Liveblocks room ID, dynamic router refreshing)
 
 ## In Progress
 
@@ -52,6 +53,8 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **API & Route Protection**: Configured `proxy.ts` to include `/(api|trpc)(.*)` in addition to `/editor(.*)` as protected paths. This guarantees that any future API endpoints are secure by default, while public routing to `/sign-in`, `/sign-up`, and `/` (which handles middleware-level auth checks and redirects) remains accessible.
 
-- **Placeholder Accessibility**: Disabled the placeholder "Read Documentation" button in `app/editor/page.tsx` using `disabled={true}`, `aria-disabled="true"`, and `title="Documentation coming soon"` to ensure accessibility compliance for assistive technologies and convey that the interactive states are pending documentation setup.
+- **Immutable URL Slugs & Room IDs**: Designed workspace URL identifiers/slugs as immutable database primary keys (`Project.id`) to preserve database relations (e.g. `ProjectCollaborator` records) and guarantee Liveblocks multiplayer room session continuity. In Rename workflows, only the workspace's human-readable name and description can be mutated. Updated the Rename Dialog UI to clarify this system invariant and display a static workspace slug identifier.
 
+- **Cross-Boundary Utility Helpers**: Moved the core `generateSlug` helper from the client-only hook file to a pure TypeScript utility file (`lib/utils.ts`). This allows both Next.js Server Components (prerendering initial pages) and Client Components (generating temporary previews in forms) to share the same slug logic without breaking Next.js 16 Client-Server boundary import constraints.
 
+- **Robust REST API Request Validation**: Enhanced the projects endpoints (`POST /api/projects` and `PATCH /api/projects/[projectId]`) to check JSON payload formats early using try/catch blocks and strict checks (`typeof body !== 'object' || body === null || Array.isArray(body)`). This ensures arrays and non-object values are rejected with `400 Bad Request` rather than causing internal database exceptions (resulting in 500 status codes).
