@@ -18,6 +18,8 @@ interface ProjectContextType {
   setRenameOpen: (open: boolean) => void;
   deleteOpen: boolean;
   setDeleteOpen: (open: boolean) => void;
+  shareOpen: boolean;
+  setShareOpen: (open: boolean) => void;
   
   // Form State
   projectName: string;
@@ -58,6 +60,8 @@ export function ProjectProvider({
     }
     return null
   })
+  
+  const [shareOpen, setShareOpen] = useState(false)
 
   // Synchronize state when page routes change or new initialProjects load
   useEffect(() => {
@@ -86,6 +90,8 @@ export function ProjectProvider({
         activeProject,
         openProject,
         closeProject,
+        shareOpen,
+        setShareOpen,
         ...actions,
       }}
     >

@@ -6,6 +6,7 @@ import { UserButton } from "@clerk/nextjs"
 import { clerkAppearance } from "@/lib/clerk-theme"
 import { Project } from "@/hooks/use-project-actions"
 import { cn } from "@/lib/utils"
+import { useProjects } from "@/contexts/project-context"
 
 interface EditorNavbarProps {
   isSidebarOpen: boolean;
@@ -22,6 +23,7 @@ export function EditorNavbar({
   isAiSidebarOpen = false,
   onToggleAiSidebar,
 }: EditorNavbarProps) {
+  const { setShareOpen } = useProjects()
   return (
     <header className="h-14 flex items-center justify-between px-4 bg-surface border-b border-surface-border text-copy-primary select-none z-20 shrink-0">
       {/* Left section: Sidebar toggle button */}
@@ -64,11 +66,11 @@ export function EditorNavbar({
       <div className="flex items-center gap-3">
         {activeProject && (
           <>
-            {/* Share Button (Mocked) */}
+            {/* Share Button */}
             <Button
               variant="outline"
               size="sm"
-              onClick={() => alert("Collaborator sharing coming soon!")}
+              onClick={() => setShareOpen(true)}
               className="h-8 border-surface-border hover:bg-subtle text-xs px-3 rounded-lg flex items-center gap-1.5 text-copy-secondary hover:text-copy-primary transition-all duration-200 font-medium"
             >
               <Share2 className="h-3.5 w-3.5" />

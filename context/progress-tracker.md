@@ -21,6 +21,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Project REST API Routes (GET /api/projects, POST /api/projects, PATCH /api/projects/[projectId], DELETE /api/projects/[projectId])
 - `[x]` Editor Home Integration & Project Mutations Hook (Server-side project fetching, hooks/use-project-actions.ts custom mutation hook, alignment of project ID and Liveblocks room ID, dynamic router refreshing)
 - `[x]` Editor Workspace Shell (Server-side access checks, dynamic route parameter synchronization, collapsible AI copilot side panel, and sharing button)
+- `[x]` Share Collaboration Dialog (Invite/remove collaborators by email, enrich display names/avatars via Clerk Backend API)
 
 ## In Progress
 
@@ -63,4 +64,9 @@ Update this file whenever the current phase, active feature, or implementation s
 - **Route-Based Project State Synchronization**: Synced the client-side active workspace state directly with dynamic route transitions (`/editor/[roomId]`). Instead of modifying local component states on project activation/deactivation, actions invoke `router.push('/editor/[roomId]')` and `router.push('/editor')` transitions. This maintains URL bookmarkability and enables multiplayer page links.
 
 - **Dynamic Page Parameter Awaiting in Next.js 16**: In compliance with Next.js 16's asynchronous layout constraints, dynamic params are typed as `Promise<{ roomId: string }>` in `/editor/[roomId]/page.tsx` and resolved asynchronously using `await params` before checking project access.
+
+- **Clerk Backend User Profile Enrichment**: Implemented batch lookup helper queries using the Clerk Backend SDK (`clerkClient.users.getUserList`) to dynamically resolve full names and custom profile image URLs for collaborator accounts matching project access emails.
+
+- **Collaborator Read-Only Access Gating**: Enforced security checks at both API routing endpoints and React UI trees. Users listed as collaborators (not owners) are shown a read-only list of workspace users, the delete and invite fields are hidden/disabled, and POST/DELETE actions are blocked server-side (returning a `403 Forbidden` response).
+
 
