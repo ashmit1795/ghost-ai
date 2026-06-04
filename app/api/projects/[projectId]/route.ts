@@ -27,7 +27,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    let body: any
+    let body: unknown
     try {
       body = await req.json()
     } catch {
@@ -38,14 +38,16 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       return Response.json({ error: 'Invalid payload' }, { status: 400 })
     }
 
-    if ('name' in body) {
-      if (typeof body.name !== 'string' || !body.name.trim()) {
+    const payload = body as Record<string, unknown>
+
+    if ('name' in payload) {
+      if (typeof payload.name !== 'string' || !payload.name.trim()) {
         return Response.json({ error: 'Project name is required' }, { status: 400 })
       }
     }
 
-    if ('description' in body) {
-      if (body.description !== null && typeof body.description !== 'string') {
+    if ('description' in payload) {
+      if (payload.description !== null && typeof payload.description !== 'string') {
         return Response.json({ error: 'Description must be a string' }, { status: 400 })
       }
     }
@@ -53,8 +55,8 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     const updatedProject = await prisma.project.update({
       where: { id: projectId },
       data: {
-        name: body.name !== undefined ? body.name.trim() : project.name,
-        description: body.description !== undefined ? (body.description === null ? null : body.description.trim()) : project.description,
+        name: typeof payload.name === 'string' ? payload.name.trim() : project.name,
+        description: typeof payload.description === 'string' ? payload.description.trim() : (payload.description === null ? null : project.description),
       }
     })
     return Response.json(updatedProject)

@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: any
+  let body: unknown
   try {
     body = await req.json()
   } catch {
@@ -44,16 +44,18 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Payload must be an object' }, { status: 400 })
   }
 
-  if ('name' in body && typeof body.name !== 'string') {
+  const payload = body as Record<string, unknown>
+
+  if ('name' in payload && typeof payload.name !== 'string') {
     return Response.json({ error: 'Project name must be a string' }, { status: 400 })
   }
 
-  if ('description' in body && body.description !== null && typeof body.description !== 'string') {
+  if ('description' in payload && payload.description !== null && typeof payload.description !== 'string') {
     return Response.json({ error: 'Description must be a string' }, { status: 400 })
   }
 
-  const projectName = body.name?.trim() || 'Untitled Project'
-  const projectDescription = body.description !== undefined && body.description !== null ? body.description.trim() : null
+  const projectName = typeof payload.name === 'string' ? payload.name.trim() : 'Untitled Project'
+  const projectDescription = typeof payload.description === 'string' ? payload.description.trim() : null
 
   try {
 
