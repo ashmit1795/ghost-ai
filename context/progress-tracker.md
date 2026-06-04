@@ -18,10 +18,11 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Project Dialogs (Create Project with live slug/autofocus/loading states, Rename Project, Delete Project, and Sidebar actions rename/delete for owned projects)
 - `[x]` SaaS Copywriting & Design Refinement (Refactored project to workspace terminology, aligned tags/taglines/descriptions, improved empty states, and redesigned global error view)
 - `[x]` Database Schema & Prisma Client Singleton (Model definitions, prisma.config.ts, lib/prisma.ts, migration runs)
+- `[x]` Project REST API Routes (GET /api/projects, POST /api/projects, PATCH /api/projects/[projectId], DELETE /api/projects/[projectId])
 
 ## In Progress
 
-- None yet.
+- None.
 
 ## Next Up
 
