@@ -1,6 +1,6 @@
 "use client"
 
-import { ShieldAlert, ArrowLeft } from "lucide-react"
+import { Lock, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
@@ -30,7 +30,7 @@ export function AccessDenied() {
         <div className="relative flex flex-col items-center text-center bg-surface/60 border border-surface-border rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
           {/* Lock Icon Wrapper */}
           <div className="h-16 w-16 rounded-full bg-error-dim border border-error/20 flex items-center justify-center mb-6 text-error shadow-lg shadow-error/10 animate-pulse">
-            <ShieldAlert className="h-7 w-7" />
+            <Lock className="h-7 w-7" />
           </div>
 
           {/* Title & Wording */}
