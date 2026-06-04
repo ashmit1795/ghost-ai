@@ -49,13 +49,15 @@ const INITIAL_PROJECTS: Project[] = [
 ]
 
 export const generateSlug = (name: string): string => {
-  return name
+  const computed = name
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, "") // remove non-alphanumeric except spaces/hyphens
     .replace(/[\s_]+/g, "-")      // replace spaces/underscores with hyphens
     .replace(/-+/g, "-")          // remove duplicate hyphens
     .replace(/^-+|-+$/g, "")      // trim hyphens from start/end
+  
+  return computed || "workspace"
 }
 
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
@@ -90,11 +92,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     // Simulate minor async transition
     await new Promise((resolve) => setTimeout(resolve, 600))
     
-    let baseSlug = generateSlug(name)
-    // Fallback if the slug resolved is empty
-    if (!baseSlug) {
-      baseSlug = "workspace"
-    }
+    const baseSlug = generateSlug(name)
     
     // Ensure slug uniqueness among existing projects
     let uniqueSlug = baseSlug
@@ -123,15 +121,23 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     await new Promise((resolve) => setTimeout(resolve, 600))
     
     const updatedName = newName.trim()
-    const updatedSlug = generateSlug(updatedName)
+    const baseSlug = generateSlug(updatedName)
+    
+    // Ensure slug uniqueness among other projects
+    let uniqueSlug = baseSlug
+    const existingSlugs = new Set(projects.filter((p) => p.id !== id).map((p) => p.slug))
+    while (existingSlugs.has(uniqueSlug)) {
+      const randomSuffix = Math.random().toString(36).substring(2, 7) // 5 character random suffix
+      uniqueSlug = `${baseSlug}-${randomSuffix}`
+    }
     
     setProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, name: updatedName, slug: updatedSlug } : p))
+      prev.map((p) => (p.id === id ? { ...p, name: updatedName, slug: uniqueSlug } : p))
     )
     
     // Update active project if it was renamed
     setActiveProject((prev) =>
-      prev && prev.id === id ? { ...prev, name: updatedName, slug: updatedSlug } : prev
+      prev && prev.id === id ? { ...prev, name: updatedName, slug: uniqueSlug } : prev
     )
     
     setProjectName("")
