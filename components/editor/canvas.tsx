@@ -34,7 +34,7 @@ class CanvasErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
     hasError: false,
   }
 
-  public static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
+  public static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true }
   }
 
@@ -93,8 +93,10 @@ function CanvasNodeComponent({ id, data, selected, width, height }: NodeProps<Ca
     }
   }
 
-  const w = width || 150
-  const h = height || 80
+  const reactFlowInstance = useReactFlow()
+  const node = reactFlowInstance.getNode(id)
+  const w = width ?? node?.width ?? 150
+  const h = height ?? node?.height ?? 80
   const shape = data.shape || "rectangle"
   const strokeColor = selected ? "var(--accent-primary)" : "var(--border-default)"
   const strokeWidth = selected ? 2.5 : 1.5
@@ -405,7 +407,7 @@ function CollaborativeCanvas() {
       }
 
       // Generate node ID
-      const id = `${shape}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`
+      const id = `${shape}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
 
       const newNode: CanvasNode = {
         id,
@@ -418,10 +420,6 @@ function CollaborativeCanvas() {
         },
         width,
         height,
-        style: {
-          width,
-          height,
-        },
       }
 
       // Add node using type: "add"

@@ -4,6 +4,10 @@ const globalForLiveblocks = globalThis as unknown as {
   liveblocks: Liveblocks | undefined
 }
 
+if (!process.env.LIVEBLOCKS_SECRET_KEY && process.env.NODE_ENV === "production") {
+  throw new Error("LIVEBLOCKS_SECRET_KEY is missing in production. secretKey cannot be initialized with a dummy value.")
+}
+
 const secretKey = process.env.LIVEBLOCKS_SECRET_KEY || "sk_dummy_secret_key_for_build"
 
 let liveblocksInstance: Liveblocks
@@ -11,10 +15,6 @@ let liveblocksInstance: Liveblocks
 if (globalForLiveblocks.liveblocks) {
   liveblocksInstance = globalForLiveblocks.liveblocks
 } else {
-  if (!process.env.LIVEBLOCKS_SECRET_KEY && process.env.NODE_ENV === "production") {
-    console.warn("WARNING: LIVEBLOCKS_SECRET_KEY environment variable is missing.")
-  }
-
   liveblocksInstance = new Liveblocks({
     secret: secretKey,
   })
