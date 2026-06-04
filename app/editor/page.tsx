@@ -30,6 +30,8 @@ export default async function EditorPage() {
     orderBy: { createdAt: "desc" },
   })
 
+  const ownedIds = new Set(ownedProjects.map((p) => p.id))
+
   // Combine into Project[] shapes
   const initialProjects = [
     ...ownedProjects.map((p) => ({
@@ -39,13 +41,15 @@ export default async function EditorPage() {
       slug: p.id, // Project ID and Liveblocks room ID are aligned and immutable
       isOwner: true,
     })),
-    ...sharedProjects.map((p) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      slug: p.id,
-      isOwner: false,
-    })),
+    ...sharedProjects
+      .filter((p) => !ownedIds.has(p.id))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        slug: p.id,
+        isOwner: false,
+      })),
   ]
 
   return <EditorWorkspace initialProjects={initialProjects} />

@@ -100,7 +100,7 @@ export function useProjectActions(
         },
         body: JSON.stringify({
           name: newName.trim(),
-          description: newDescription !== undefined ? newDescription.trim() : null,
+          description: newDescription?.trim() || null,
         }),
       })
 

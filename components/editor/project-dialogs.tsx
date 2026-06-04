@@ -237,8 +237,8 @@ export function ProjectDialogs() {
                 disabled={
                   isLoading ||
                   !projectName.trim() ||
-                  (projectName.trim() === targetProject?.name &&
-                    projectDescription.trim() === (targetProject?.description || ""))
+                  (projectName.trim() === targetProject?.name?.trim() &&
+                    projectDescription.trim() === (targetProject?.description?.trim() || ""))
                 }
                 className="text-xs font-semibold bg-brand hover:bg-brand/80 text-background rounded-xl px-5 h-9"
               >

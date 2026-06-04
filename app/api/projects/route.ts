@@ -54,8 +54,15 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Description must be a string' }, { status: 400 })
   }
 
-  if ('id' in payload && typeof payload.id !== 'string') {
-    return Response.json({ error: 'Project ID must be a string' }, { status: 400 })
+  if ('id' in payload) {
+    if (typeof payload.id !== 'string') {
+      return Response.json({ error: 'Project ID must be a string' }, { status: 400 })
+    }
+    const trimmedId = payload.id.trim()
+    const slugRegex = /^[a-z0-9-_]+$/
+    if (!trimmedId || trimmedId.length > 100 || !slugRegex.test(trimmedId)) {
+      return Response.json({ error: 'Invalid project ID' }, { status: 400 })
+    }
   }
 
   const projectName = typeof payload.name === 'string' ? payload.name.trim() : 'Untitled Project'

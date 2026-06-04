@@ -19,7 +19,7 @@ Create a hook in `hooks/` that manages dialog state and project mutations.
 - generate a short unique suffix
 - slugify the name to create the room ID
 - call `POST /api/projects`
-- navigate to the new workspace
+- call `setActiveProject(newProject)` and `router.refresh()` to navigate to the new workspace
 
 The project ID and Liveblocks room ID should stay aligned.
 
@@ -33,8 +33,7 @@ The project ID and Liveblocks room ID should stay aligned.
 
 - store target project
 - call `DELETE /api/projects/[id]`
-- redirect to `/editor` if deleting the active workspace
-- otherwise refresh
+- call `setActiveProject(null)` if deleting the active workspace, and call `router.refresh()` to update listings
 
 ### Wiring
 
