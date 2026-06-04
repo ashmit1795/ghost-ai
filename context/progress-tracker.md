@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Implement Prisma ORM database models, client singleton, and run the initial migration.
+- Connect React Flow to Liveblocks state for multiplayer sync.
 
 ## Completed
 
@@ -22,6 +22,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Editor Home Integration & Project Mutations Hook (Server-side project fetching, hooks/use-project-actions.ts custom mutation hook, alignment of project ID and Liveblocks room ID, dynamic router refreshing)
 - `[x]` Editor Workspace Shell (Server-side access checks, dynamic route parameter synchronization, collapsible AI copilot side panel, and sharing button)
 - `[x]` Share Collaboration Dialog (Invite/remove collaborators by email, enrich display names/avatars via Clerk Backend API)
+- `[x]` Liveblocks Setup (Configuring liveblocks.config.ts, caching lib/liveblocks-client.ts client, and creating /api/liveblocks-auth route)
 
 ## In Progress
 
