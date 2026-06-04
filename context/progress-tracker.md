@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Connect React Flow to Liveblocks state for multiplayer sync.
+- Align canvas interactions and prepare for the next development phase (Starter System Designs or AI Architecture Generation).
 
 ## Completed
 
@@ -23,6 +23,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Editor Workspace Shell (Server-side access checks, dynamic route parameter synchronization, collapsible AI copilot side panel, and sharing button)
 - `[x]` Share Collaboration Dialog (Invite/remove collaborators by email, enrich display names/avatars via Clerk Backend API)
 - `[x]` Liveblocks Setup (Configuring liveblocks.config.ts, caching lib/liveblocks-client.ts client, and creating /api/liveblocks-auth route)
+- `[x]` Base Canvas (React Flow wrapper with LiveblocksProvider, RoomProvider, ClientSideSuspense, error fallback, useLiveblocksFlow, types/canvas.ts)
 
 ## In Progress
 
@@ -30,7 +31,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Canvas Integration with React Flow & Liveblocks
+- Collaborative Node Customization & Controls
 
 ## Open Questions
 
