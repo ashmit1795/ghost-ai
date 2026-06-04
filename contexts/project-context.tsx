@@ -21,13 +21,15 @@ interface ProjectContextType {
   // Form State
   projectName: string;
   setProjectName: (name: string) => void;
+  projectDescription: string;
+  setProjectDescription: (description: string) => void;
   projectSlug: string;
   targetProjectId: string | null;
   setTargetProjectId: (id: string | null) => void;
   
   // Actions
-  handleCreateProject: (name: string) => Promise<void>;
-  handleRenameProject: (id: string, newName: string) => Promise<void>;
+  handleCreateProject: (name: string, description?: string) => Promise<void>;
+  handleRenameProject: (id: string, newName: string, newDescription?: string) => Promise<void>;
   handleDeleteProject: (id: string) => Promise<void>;
   
   // Loading State

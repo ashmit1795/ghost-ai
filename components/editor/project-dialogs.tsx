@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { useProjects } from "@/contexts/project-context"
 import { AlertTriangle } from "lucide-react"
@@ -25,6 +26,8 @@ export function ProjectDialogs() {
     
     projectName,
     setProjectName,
+    projectDescription,
+    setProjectDescription,
     projectSlug,
     targetProjectId,
     setTargetProjectId,
@@ -42,35 +45,38 @@ export function ProjectDialogs() {
   // Find the target project details for pre-filling and rendering metadata
   const targetProject = projects.find((p) => p.id === targetProjectId)
 
-  // Populate form with current project name when opening rename dialog & handle autofocus
+  // Populate form with current project name/description when opening rename dialog & handle autofocus
   useEffect(() => {
     if (renameOpen && targetProject) {
       setProjectName(targetProject.name)
+      setProjectDescription(targetProject.description || "")
       // Focus input helper
       setTimeout(() => {
         renameInputRef.current?.focus()
         renameInputRef.current?.select()
       }, 50)
     } else if (createOpen) {
+      setProjectDescription("")
       setTimeout(() => {
         createInputRef.current?.focus()
       }, 50)
     } else if (!createOpen && !renameOpen) {
       setProjectName("")
+      setProjectDescription("")
     }
-  }, [renameOpen, createOpen, targetProject, setProjectName])
+  }, [renameOpen, createOpen, targetProject, setProjectName, setProjectDescription])
 
   // Handle submissions
   const onCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!projectName.trim() || isLoading) return
-    handleCreateProject(projectName)
+    handleCreateProject(projectName, projectDescription)
   }
 
   const onRenameSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!projectName.trim() || !targetProjectId || isLoading) return
-    handleRenameProject(targetProjectId, projectName)
+    handleRenameProject(targetProjectId, projectName, projectDescription)
   }
 
   const onDeleteSubmit = (e: React.FormEvent) => {
@@ -108,6 +114,20 @@ export function ProjectDialogs() {
                   disabled={isLoading}
                   required
                   className="bg-base border-surface-border-subtle focus-visible:border-brand rounded-xl h-9 text-xs"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="create-workspace-description" className="text-[11px] font-semibold tracking-wider text-copy-secondary uppercase">
+                  Workspace Description (Optional)
+                </label>
+                <Textarea
+                  id="create-workspace-description"
+                  placeholder="e.g., Multiplayer canvas modeling for system orchestration..."
+                  value={projectDescription}
+                  onChange={(e) => setProjectDescription(e.target.value)}
+                  disabled={isLoading}
+                  className="bg-base border-surface-border-subtle focus-visible:border-brand rounded-xl min-h-16 text-xs"
                 />
               </div>
 
@@ -172,6 +192,20 @@ export function ProjectDialogs() {
                 />
               </div>
 
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="rename-workspace-description" className="text-[11px] font-semibold tracking-wider text-copy-secondary uppercase">
+                  Workspace Description (Optional)
+                </label>
+                <Textarea
+                  id="rename-workspace-description"
+                  placeholder="e.g., Multiplayer canvas modeling for system orchestration..."
+                  value={projectDescription}
+                  onChange={(e) => setProjectDescription(e.target.value)}
+                  disabled={isLoading}
+                  className="bg-base border-surface-border-subtle focus-visible:border-brand rounded-xl min-h-16 text-xs"
+                />
+              </div>
+
               {targetProject && (
                 <div className="rounded-xl bg-base border border-surface-border-subtle p-3 text-[11px] font-mono text-copy-muted break-all flex flex-col gap-1">
                   <div>
@@ -200,7 +234,12 @@ export function ProjectDialogs() {
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading || !projectName.trim() || projectName.trim() === targetProject?.name}
+                disabled={
+                  isLoading ||
+                  !projectName.trim() ||
+                  (projectName.trim() === targetProject?.name &&
+                    projectDescription.trim() === (targetProject?.description || ""))
+                }
                 className="text-xs font-semibold bg-brand hover:bg-brand/80 text-background rounded-xl px-5 h-9"
               >
                 {isLoading ? "Applying..." : "Apply Changes"}

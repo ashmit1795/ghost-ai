@@ -7,6 +7,7 @@ import { generateSlug } from "@/lib/utils"
 export interface Project {
   id: string
   name: string
+  description?: string | null
   slug: string
   isOwner: boolean
 }
@@ -24,6 +25,7 @@ export function useProjectActions(
 
   // Form states
   const [projectName, setProjectName] = useState("")
+  const [projectDescription, setProjectDescription] = useState("")
   const [targetProjectId, setTargetProjectId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -34,6 +36,7 @@ export function useProjectActions(
     if (open) {
       setUniqueSuffix(Math.random().toString(36).substring(2, 7))
       setProjectName("")
+      setProjectDescription("")
     }
     setCreateOpen(open)
   }
@@ -41,7 +44,7 @@ export function useProjectActions(
   const baseSlug = generateSlug(projectName)
   const projectSlug = projectName.trim() ? `${baseSlug}-${uniqueSuffix}` : ""
 
-  const handleCreateProject = async (name: string) => {
+  const handleCreateProject = async (name: string, description?: string) => {
     setIsLoading(true)
     const computedRoomId = projectSlug || `${generateSlug(name)}-${uniqueSuffix}`
     try {
@@ -53,6 +56,7 @@ export function useProjectActions(
         body: JSON.stringify({
           id: computedRoomId,
           name: name.trim(),
+          description: description?.trim() || null,
         }),
       })
 
@@ -67,12 +71,14 @@ export function useProjectActions(
       setActiveProject({
         id: newProject.id,
         name: newProject.name,
+        description: newProject.description,
         slug: newProject.id, // Align slug with immutable project ID
         isOwner: true,
       })
 
       // Clean up form
       setProjectName("")
+      setProjectDescription("")
       setCreateOpen(false)
       
       // Refresh page data
@@ -84,7 +90,7 @@ export function useProjectActions(
     }
   }
 
-  const handleRenameProject = async (id: string, newName: string) => {
+  const handleRenameProject = async (id: string, newName: string, newDescription?: string) => {
     setIsLoading(true)
     try {
       const res = await fetch(`/api/projects/${id}`, {
@@ -94,6 +100,7 @@ export function useProjectActions(
         },
         body: JSON.stringify({
           name: newName.trim(),
+          description: newDescription !== undefined ? newDescription.trim() : null,
         }),
       })
 
@@ -109,10 +116,12 @@ export function useProjectActions(
         setActiveProject({
           ...activeProject,
           name: updatedProject.name,
+          description: updatedProject.description,
         })
       }
 
       setProjectName("")
+      setProjectDescription("")
       setTargetProjectId(null)
       setRenameOpen(false)
       
@@ -161,6 +170,8 @@ export function useProjectActions(
     setDeleteOpen,
     projectName,
     setProjectName,
+    projectDescription,
+    setProjectDescription,
     projectSlug,
     targetProjectId,
     setTargetProjectId,

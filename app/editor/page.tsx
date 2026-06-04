@@ -35,12 +35,14 @@ export default async function EditorPage() {
     ...ownedProjects.map((p) => ({
       id: p.id,
       name: p.name,
+      description: p.description,
       slug: p.id, // Project ID and Liveblocks room ID are aligned and immutable
       isOwner: true,
     })),
     ...sharedProjects.map((p) => ({
       id: p.id,
       name: p.name,
+      description: p.description,
       slug: p.id,
       isOwner: false,
     })),
