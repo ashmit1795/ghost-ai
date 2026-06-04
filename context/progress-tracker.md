@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Implement shared collaborative workspace canvas using React Flow & Liveblocks.
+- Implement Prisma ORM database models, client singleton, and run the initial migration.
 
 ## Completed
 
@@ -17,6 +17,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Authentication Integration (Clerk integration, proxy.ts route protection, custom sign-in/up views, user button in editor navbar)
 - `[x]` Project Dialogs (Create Project with live slug/autofocus/loading states, Rename Project, Delete Project, and Sidebar actions rename/delete for owned projects)
 - `[x]` SaaS Copywriting & Design Refinement (Refactored project to workspace terminology, aligned tags/taglines/descriptions, improved empty states, and redesigned global error view)
+- `[x]` Database Schema & Prisma Client Singleton (Model definitions, prisma.config.ts, lib/prisma.ts, migration runs)
 
 ## In Progress
 
