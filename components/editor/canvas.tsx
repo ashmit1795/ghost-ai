@@ -1,18 +1,19 @@
 "use client"
 
-import React, { Component, ErrorInfo, ReactNode } from "react"
-import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode } from "@xyflow/react"
-import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense"
+import React, { Component, ErrorInfo, ReactNode, useRef, useCallback, useState, useEffect } from "react"
+import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, ReactFlowProvider, useReactFlow, Handle, Position, NodeProps, NodeResizer, NodeChange } from "@xyflow/react"
+import { LiveblocksProvider, RoomProvider, ClientSideSuspense, useMutation } from "@liveblocks/react/suspense"
 import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow"
 import { AlertTriangle, Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 // Import CSS styles for React Flow and Liveblocks
 import "@xyflow/react/dist/style.css"
 import "@liveblocks/react-ui/styles.css"
 import "@liveblocks/react-flow/styles.css"
 
-// Import Canvas types
-import { CanvasNode, CanvasEdge } from "@/types/canvas"
+// Import Canvas types and constants
+import { CanvasNode, CanvasEdge, NodeShape, NODE_COLORS, NODE_SHAPES, NodeColorKey } from "@/types/canvas"
 
 interface CanvasWrapperProps {
   roomId: string
@@ -33,7 +34,7 @@ class CanvasErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
     hasError: false,
   }
 
-  public static getDerivedStateFromError(_: Error): ErrorBoundaryState {
+  public static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
     return { hasError: true }
   }
 
@@ -50,8 +51,278 @@ class CanvasErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
-// 2. Collaborative Canvas (wrapped inside Liveblocks RoomProvider)
+interface LiveObjectLike {
+  get(key: string): unknown
+  set(key: string, val: unknown): void
+}
+
+// 2. Custom Node Component with dynamic shape rendering, resize controls, and inline editing
+function CanvasNodeComponent({ id, data, selected, width, height }: NodeProps<CanvasNode>) {
+  const colorKey = (data.color || "neutral") as NodeColorKey
+  const colors = NODE_COLORS[colorKey] || NODE_COLORS.neutral
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState("")
+
+  const handleStartEditing = () => {
+    setEditValue(data.label)
+    setIsEditing(true)
+  }
+
+  // Liveblocks mutation to update node data properties collaboratively
+  const updateNodeData = useMutation(({ storage }, nodeId: string, partialData: Partial<typeof data>) => {
+    const flow = (storage as unknown as LiveObjectLike).get("flow") as LiveObjectLike
+    if (!flow) return
+    const nodesMap = flow.get("nodes") as LiveObjectLike
+    if (!nodesMap) return
+    const nodeObj = nodesMap.get(nodeId) as LiveObjectLike
+    if (!nodeObj) return
+    const dataObj = nodeObj.get("data") as LiveObjectLike
+    if (dataObj) {
+      for (const [key, val] of Object.entries(partialData)) {
+        dataObj.set(key, val)
+      }
+    }
+  }, [])
+
+  const handleSave = () => {
+    setIsEditing(false)
+    const trimmed = editValue.trim()
+    if (trimmed !== data.label) {
+      updateNodeData(id, { label: trimmed })
+    }
+  }
+
+  const w = width || 150
+  const h = height || 80
+  const shape = data.shape || "rectangle"
+  const strokeColor = selected ? "var(--accent-primary)" : "var(--border-default)"
+  const strokeWidth = selected ? 2.5 : 1.5
+
+  return (
+    <div className="w-full h-full relative group">
+      {/* NodeResizer handles resizing nodes when selected */}
+      <NodeResizer
+        color="var(--accent-primary)"
+        minWidth={80}
+        minHeight={40}
+        isVisible={selected}
+        lineClassName="border-brand"
+        handleClassName="h-2.5 w-2.5 bg-white border-2 border-brand rounded-md shadow-md"
+      />
+
+      {/* SVG Shape Outline Background */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+        {shape === "rectangle" && (
+          <rect
+            x={strokeWidth / 2}
+            y={strokeWidth / 2}
+            width={w - strokeWidth}
+            height={h - strokeWidth}
+            rx={12}
+            fill={colors.fill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
+        )}
+        {shape === "circle" && (
+          <ellipse
+            cx={w / 2}
+            cy={h / 2}
+            rx={w / 2 - strokeWidth / 2}
+            ry={h / 2 - strokeWidth / 2}
+            fill={colors.fill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
+        )}
+        {shape === "pill" && (
+          <rect
+            x={strokeWidth / 2}
+            y={strokeWidth / 2}
+            width={w - strokeWidth}
+            height={h - strokeWidth}
+            rx={Math.min(w, h) / 2}
+            fill={colors.fill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
+        )}
+        {shape === "diamond" && (
+          <path
+            d={`M ${w / 2} ${strokeWidth / 2} L ${w - strokeWidth / 2} ${h / 2} L ${w / 2} ${h - strokeWidth / 2} L ${strokeWidth / 2} ${h / 2} Z`}
+            fill={colors.fill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
+        )}
+        {shape === "hexagon" && (
+          <path
+            d={`M ${w * 0.25} ${strokeWidth / 2} L ${w * 0.75} ${strokeWidth / 2} L ${w - strokeWidth / 2} ${h / 2} L ${w * 0.75} ${h - strokeWidth / 2} L ${w * 0.25} ${h - strokeWidth / 2} L ${strokeWidth / 2} ${h / 2} Z`}
+            fill={colors.fill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
+        )}
+        {shape === "cylinder" && (
+          <>
+            <path
+              d={`M ${strokeWidth / 2} 12 L ${strokeWidth / 2} ${h - 12} A ${w / 2 - strokeWidth / 2} 8 0 0 0 ${w - strokeWidth / 2} ${h - 12} L ${w - strokeWidth / 2} 12 Z`}
+              fill={colors.fill}
+              stroke={strokeColor}
+              strokeWidth={strokeWidth}
+            />
+            <ellipse
+              cx={w / 2}
+              cy={12}
+              rx={w / 2 - strokeWidth / 2}
+              ry={8}
+              fill={colors.fill}
+              stroke={strokeColor}
+              strokeWidth={strokeWidth}
+            />
+          </>
+        )}
+      </svg>
+
+      {/* Interactive Label Content (overlays the SVG background shape) */}
+      <div
+        onDoubleClick={handleStartEditing}
+        className={cn(
+          "relative w-full h-full flex items-center justify-center p-4 select-none cursor-pointer z-10 text-center rounded-xl",
+          "hover:text-copy-primary transition-all duration-200"
+        )}
+        style={{
+          color: colors.text,
+        }}
+      >
+        {isEditing ? (
+          <input
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSave()
+              if (e.key === "Escape") {
+                setEditValue(data.label)
+                setIsEditing(false)
+              }
+            }}
+            className="bg-transparent border-none text-center outline-none w-full text-xs font-sans text-copy-primary focus:ring-0 p-0 cursor-text select-text"
+            autoFocus
+          />
+        ) : (
+          <div className="font-sans text-xs font-medium tracking-wide leading-snug px-1 truncate w-full">
+            {data.label || <span className="opacity-30 italic select-none">Double-click to edit</span>}
+          </div>
+        )}
+      </div>
+
+      {/* Connection Handles: Top, Right, Bottom, Left */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="t"
+        className="!w-2 !h-2 !bg-text-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-crosshair z-20"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="r"
+        className="!w-2 !h-2 !bg-text-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-crosshair z-20"
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="b"
+        className="!w-2 !h-2 !bg-text-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-crosshair z-20"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="l"
+        className="!w-2 !h-2 !bg-text-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-crosshair z-20"
+      />
+    </div>
+  )
+}
+
+// Node types registry for React Flow
+const nodeTypes = {
+  canvasNode: CanvasNodeComponent,
+}
+
+// 3. Bottom Shape Panel Toolbar
+interface ShapePanelProps {
+  onDragStart: (event: React.DragEvent, shape: NodeShape) => void
+}
+
+function ShapePanel({ onDragStart }: ShapePanelProps) {
+  // SVG Icons for each shape
+  const shapeIcons: Record<NodeShape, React.ReactNode> = {
+    rectangle: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+        <rect x="3" y="6" width="18" height="12" rx="1.5" />
+      </svg>
+    ),
+    diamond: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+        <path d="M12 3L21 12L12 21L3 12Z" />
+      </svg>
+    ),
+    circle: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+        <circle cx="12" cy="12" r="9" />
+      </svg>
+    ),
+    pill: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+        <rect x="4" y="8" width="16" height="8" rx="4" />
+      </svg>
+    ),
+    cylinder: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+        <ellipse cx="12" cy="6" rx="6" ry="2.5" />
+        <path d="M6 6v12c0 1.5 2.7 2.5 6 2.5s6-1 6-2.5V6" />
+        <path d="M6 12c0 1.5 2.7 2.5 6 2.5s6-1 6-2.5" strokeDasharray="2 2" />
+      </svg>
+    ),
+    hexagon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+        <path d="M12 2.5l7.79 4.5v9L12 21.5l-7.79-4.5v-9Z" />
+      </svg>
+    ),
+  }
+
+  return (
+    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-surface/90 backdrop-blur-md border border-surface-border px-4 py-2 rounded-2xl shadow-2xl flex items-center gap-3 z-30 animate-in slide-in-from-bottom-5 duration-300">
+      <div className="text-[10px] font-mono text-copy-muted pr-3 border-r border-surface-border select-none uppercase tracking-wider">
+        Shapes
+      </div>
+      {NODE_SHAPES.map((shape) => (
+        <div
+          key={shape}
+          draggable
+          onDragStart={(e) => onDragStart(e, shape)}
+          className="p-2 rounded-xl hover:bg-subtle text-copy-secondary hover:text-brand cursor-grab active:cursor-grabbing transition-all duration-200 group relative flex items-center justify-center"
+        >
+          {shapeIcons[shape]}
+          {/* Custom Tooltip */}
+          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 rounded-lg bg-surface border border-surface-border text-[9px] text-copy-primary font-mono uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap shadow-lg">
+            {shape}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// 4. Collaborative Canvas (inside ReactFlowProvider)
 function CollaborativeCanvas() {
+  const reactFlowWrapper = useRef<HTMLDivElement>(null)
+  const reactFlowInstance = useReactFlow()
+
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } = useLiveblocksFlow<CanvasNode, CanvasEdge>({
     suspense: true,
     nodes: {
@@ -62,8 +333,115 @@ function CollaborativeCanvas() {
     },
   })
 
+  // Handles drag start payload
+  const handleDragStart = useCallback((event: React.DragEvent, shape: NodeShape) => {
+    let width = 150
+    let height = 80
+    switch (shape) {
+      case "rectangle":
+        width = 150
+        height = 80
+        break
+      case "diamond":
+        width = 120
+        height = 120
+        break
+      case "circle":
+        width = 80
+        height = 80
+        break
+      case "pill":
+        width = 120
+        height = 60
+        break
+      case "cylinder":
+        width = 100
+        height = 100
+        break
+      case "hexagon":
+        width = 120
+        height = 100
+        break
+    }
+
+    event.dataTransfer.setData("application/reactflow/shape", shape)
+    event.dataTransfer.setData("application/reactflow/width", String(width))
+    event.dataTransfer.setData("application/reactflow/height", String(height))
+    event.dataTransfer.effectAllowed = "move"
+  }, [])
+
+  // Drag over handler
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = "move"
+  }, [])
+
+  // Drop handler to create nodes
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault()
+
+      if (!reactFlowWrapper.current) return
+
+      const shape = event.dataTransfer.getData("application/reactflow/shape") as NodeShape
+      const widthStr = event.dataTransfer.getData("application/reactflow/width")
+      const heightStr = event.dataTransfer.getData("application/reactflow/height")
+
+      if (!shape) return
+
+      const width = parseInt(widthStr, 10) || 150
+      const height = parseInt(heightStr, 10) || 80
+
+      // Convert screen client coordinates to flow coordinates
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      })
+
+      // Center the node on drop coordinates
+      const centerPosition = {
+        x: position.x - width / 2,
+        y: position.y - height / 2,
+      }
+
+      // Generate node ID
+      const id = `${shape}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`
+
+      const newNode: CanvasNode = {
+        id,
+        type: "canvasNode",
+        position: centerPosition,
+        data: {
+          label: "",
+          shape,
+          color: "neutral",
+        },
+        width,
+        height,
+        style: {
+          width,
+          height,
+        },
+      }
+
+      // Add node using type: "add"
+      onNodesChange([
+        {
+          type: "add",
+          item: newNode,
+        } as unknown as NodeChange<CanvasNode>,
+      ])
+    },
+    [reactFlowInstance, onNodesChange]
+  )
+
   return (
-    <div className="w-full h-full relative select-none">
+    <div 
+      ref={reactFlowWrapper} 
+      className="w-full h-full relative select-none"
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -71,7 +449,9 @@ function CollaborativeCanvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onDelete={onDelete}
+        nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
+        zoomOnDoubleClick={false}
         fitView
         className="bg-base"
       >
@@ -83,18 +463,21 @@ function CollaborativeCanvas() {
         />
         <MiniMap
           position="bottom-left"
-          className="bg-surface! border! border-surface-border! rounded-xl overflow-hidden shadow-lg"
+          className="!bg-surface !border !border-surface-border rounded-xl overflow-hidden shadow-lg"
           maskColor="rgba(8, 8, 9, 0.7)"
           nodeColor="#1a1a20"
           nodeStrokeWidth={0}
         />
         <Cursors />
       </ReactFlow>
+
+      {/* Floating Pill Toolbar */}
+      <ShapePanel onDragStart={handleDragStart} />
     </div>
   )
 }
 
-// 3. Loading Fallback
+// 5. Loading Fallback
 function CanvasLoadingState() {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-base text-copy-primary z-50">
@@ -108,7 +491,7 @@ function CanvasLoadingState() {
   )
 }
 
-// 4. Connection Error Fallback
+// 6. Connection Error Fallback
 function CanvasErrorState({ onReset }: { onReset: () => void }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-base text-copy-primary p-6 z-50">
@@ -133,9 +516,9 @@ function CanvasErrorState({ onReset }: { onReset: () => void }) {
   )
 }
 
-// 5. Canvas Root Component
+// 7. Canvas Root Component
 export function Canvas({ roomId }: CanvasWrapperProps) {
-  const [errorKey, setErrorKey] = React.useState(0)
+  const [errorKey, setErrorKey] = useState(0)
 
   const handleReset = () => {
     setErrorKey((prev) => prev + 1)
@@ -150,7 +533,9 @@ export function Canvas({ roomId }: CanvasWrapperProps) {
             initialPresence={{ cursor: null, isThinking: false }}
           >
             <ClientSideSuspense fallback={<CanvasLoadingState />}>
-              <CollaborativeCanvas />
+              <ReactFlowProvider>
+                <CollaborativeCanvas />
+              </ReactFlowProvider>
             </ClientSideSuspense>
           </RoomProvider>
         </LiveblocksProvider>

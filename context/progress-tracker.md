@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Align canvas interactions and prepare for the next development phase (Starter System Designs or AI Architecture Generation).
+- Implement collaborative node customization controls for double-click editing and colors/shapes.
 
 ## Completed
 
@@ -24,6 +24,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Share Collaboration Dialog (Invite/remove collaborators by email, enrich display names/avatars via Clerk Backend API)
 - `[x]` Liveblocks Setup (Configuring liveblocks.config.ts, caching lib/liveblocks-client.ts client, and creating /api/liveblocks-auth route)
 - `[x]` Base Canvas (React Flow wrapper with LiveblocksProvider, RoomProvider, ClientSideSuspense, error fallback, useLiveblocksFlow, types/canvas.ts)
+- `[x]` Shape Panel (Bottom toolbar, shape drag-and-drop to canvas, useReactFlow coordinate conversion, custom canvasNode component rendering shapes as bordered rectangles)
 
 ## In Progress
 
