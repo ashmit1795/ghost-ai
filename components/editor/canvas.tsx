@@ -1,9 +1,10 @@
 "use client"
 
 import React, { Component, ErrorInfo, ReactNode, useRef, useCallback, useState, useEffect, useContext } from "react"
-import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, ReactFlowProvider, useReactFlow, Handle, Position, NodeProps, NodeResizer, NodeChange, NodeToolbar } from "@xyflow/react"
+import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, ReactFlowProvider, useReactFlow, Handle, Position, NodeProps, NodeResizer, NodeChange, NodeToolbar, MarkerType } from "@xyflow/react"
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense, useMutation } from "@liveblocks/react/suspense"
 import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow"
+import { LiveObject } from "@liveblocks/client"
 import { AlertTriangle, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -14,6 +15,7 @@ import "@liveblocks/react-flow/styles.css"
 
 // Import Canvas types and constants
 import { CanvasNode, CanvasEdge, NodeShape, NODE_COLORS, NODE_SHAPES, NodeColorKey } from "@/types/canvas"
+import { CustomCanvasEdge } from "./custom-edge"
 
 interface CanvasWrapperProps {
   roomId: string
@@ -59,8 +61,10 @@ interface LiveObjectLike {
 interface CanvasActionsContextType {
   deleteNode: (id: string) => void
   duplicateNode: (id: string) => void
+  deleteEdge: (id: string) => void
+  updateEdgeData: (id: string, partialData: Record<string, unknown>) => void
 }
-const CanvasActionsContext = React.createContext<CanvasActionsContextType | null>(null)
+export const CanvasActionsContext = React.createContext<CanvasActionsContextType | null>(null)
 
 // 2. Custom Node Component with dynamic shape rendering, resize controls, and inline editing
 function CanvasNodeComponent({ id, data, selected, width, height }: NodeProps<CanvasNode>) {
@@ -353,30 +357,54 @@ function CanvasNodeComponent({ id, data, selected, width, height }: NodeProps<Ca
         )}
       </div>
 
-      {/* Connection Handles: Top, Right, Bottom, Left */}
+      {/* Connection Handles: Top, Right, Bottom, Left (Dual Source and Target handles for bidirectional compatibility) */}
       <Handle
         type="target"
         position={Position.Top}
         id="t"
-        className="!w-2 !h-2 !bg-text-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-crosshair z-20"
+        className="!w-2 !h-2 !bg-copy-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-125 duration-200 cursor-crosshair z-20"
+      />
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="t"
+        className="!w-2 !h-2 !bg-copy-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-125 duration-200 cursor-crosshair z-20"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="r"
-        className="!w-2 !h-2 !bg-text-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-crosshair z-20"
+        className="!w-2 !h-2 !bg-copy-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-125 duration-200 cursor-crosshair z-20"
+      />
+      <Handle
+        type="target"
+        position={Position.Right}
+        id="r"
+        className="!w-2 !h-2 !bg-copy-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-125 duration-200 cursor-crosshair z-20"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="b"
-        className="!w-2 !h-2 !bg-text-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-crosshair z-20"
+        className="!w-2 !h-2 !bg-copy-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-125 duration-200 cursor-crosshair z-20"
+      />
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="b"
+        className="!w-2 !h-2 !bg-copy-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-125 duration-200 cursor-crosshair z-20"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="l"
-        className="!w-2 !h-2 !bg-text-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-crosshair z-20"
+        className="!w-2 !h-2 !bg-copy-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-125 duration-200 cursor-crosshair z-20"
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="l"
+        className="!w-2 !h-2 !bg-copy-primary !border-2 !border-brand shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-125 duration-200 cursor-crosshair z-20"
       />
     </div>
   )
@@ -385,6 +413,11 @@ function CanvasNodeComponent({ id, data, selected, width, height }: NodeProps<Ca
 // Node types registry for React Flow
 const nodeTypes = {
   canvasNode: CanvasNodeComponent,
+}
+
+// Edge types registry for React Flow
+const edgeTypes = {
+  customCanvasEdge: CustomCanvasEdge,
 }
 
 // 3. Bottom Shape Panel Toolbar
@@ -461,9 +494,24 @@ function CollaborativeCanvas() {
     suspense: true,
     nodes: {
       initial: [],
+      sync: {
+        "*": {
+          label: "atomic",
+          color: "atomic",
+          shape: "atomic",
+        }
+      }
     },
     edges: {
       initial: [],
+      sync: {
+        "*": {
+          label: "atomic",
+          directed: "atomic",
+          controlX: "atomic",
+          controlY: "atomic",
+        }
+      }
     },
   })
 
@@ -578,17 +626,28 @@ function CollaborativeCanvas() {
 
     const shape = targetNode.data.shape || "rectangle"
     const newId = `${shape}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+    
+    // Deselect other currently selected nodes locally to transfer focus to the clone
+    const selectionChanges = nodes
+      .filter((n) => n.selected)
+      .map((n) => ({
+        id: n.id,
+        type: "select",
+        selected: false,
+      } as unknown as NodeChange<CanvasNode>))
+
     const duplicatedNode: CanvasNode = {
       ...targetNode,
       id: newId,
       position: {
-        x: targetNode.position.x + 40,
-        y: targetNode.position.y + 40,
+        x: targetNode.position.x + 30,
+        y: targetNode.position.y - 45, // Offset above (physically higher in Y) and to the right
       },
-      selected: false,
+      selected: true,
     }
 
     onNodesChange([
+      ...selectionChanges,
       {
         type: "add",
         item: duplicatedNode,
@@ -596,8 +655,48 @@ function CollaborativeCanvas() {
     ])
   }, [nodes, onNodesChange])
 
+  const deleteEdge = useCallback((id: string) => {
+    const targetEdge = edges.find((e) => e.id === id)
+    if (targetEdge) {
+      onDelete({ nodes: [], edges: [targetEdge] })
+    }
+  }, [edges, onDelete])
+
+  const updateEdgeData = useMutation(({ storage }, edgeId: string, partialData: Record<string, unknown>) => {
+    const flow = (storage as unknown as LiveObjectLike).get("flow") as LiveObjectLike
+    if (!flow) return
+    const edgesMap = flow.get("edges") as LiveObjectLike
+    if (!edgesMap) return
+    const edgeObj = edgesMap.get(edgeId) as LiveObjectLike
+    if (!edgeObj) return
+    let dataObj = edgeObj.get("data") as any
+    if (!dataObj) {
+      edgeObj.set("data", new LiveObject({ label: "", directed: true, ...partialData }))
+    } else if (typeof dataObj.set === "function") {
+      for (const [key, val] of Object.entries(partialData)) {
+        if (val === undefined || val === null) {
+          if (typeof dataObj.delete === "function") {
+            dataObj.delete(key)
+          } else {
+            dataObj.set(key, null)
+          }
+        } else {
+          dataObj.set(key, val)
+        }
+      }
+    } else {
+      const newData = { ...dataObj, ...partialData }
+      for (const [key, val] of Object.entries(partialData)) {
+        if (val === undefined || val === null) {
+          delete newData[key]
+        }
+      }
+      edgeObj.set("data", newData)
+    }
+  }, [])
+
   return (
-    <CanvasActionsContext.Provider value={{ deleteNode, duplicateNode }}>
+    <CanvasActionsContext.Provider value={{ deleteNode, duplicateNode, deleteEdge, updateEdgeData }}>
       <div 
         ref={reactFlowWrapper} 
         className="w-full h-full relative select-none"
@@ -612,6 +711,16 @@ function CollaborativeCanvas() {
           onConnect={onConnect}
           onDelete={onDelete}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          defaultEdgeOptions={{
+            type: "customCanvasEdge",
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              width: 16,
+              height: 16,
+              color: "var(--border-default)",
+            }
+          }}
           connectionMode={ConnectionMode.Loose}
           zoomOnDoubleClick={false}
           fitView

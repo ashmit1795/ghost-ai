@@ -138,3 +138,13 @@
     @apply font-sans;
     }
 }
+
+/* React Flow Connection Dragging UX: show all handles with a glow */
+.react-flow--connectiong .react-flow__handle {
+  opacity: 1 !important;
+  scale: 1.4;
+  box-shadow: 0 0 8px var(--accent-primary);
+  background-color: var(--text-primary) !important;
+  border-color: var(--accent-primary) !important;
+  transition: opacity 0.15s ease, scale 0.15s ease;
+}

@@ -9,7 +9,15 @@ export interface CanvasNodeData extends Record<string, unknown> {
 }
 
 export type CanvasNode = Node<CanvasNodeData, "canvasNode">
-export type CanvasEdge = Edge
+
+export interface CanvasEdgeData extends Record<string, unknown> {
+  label?: string
+  directed?: boolean
+  controlX?: number
+  controlY?: number
+}
+
+export type CanvasEdge = Edge<CanvasEdgeData, "customCanvasEdge">
 
 // Casing aliases to support both styles
 export type canvasNode = CanvasNode
