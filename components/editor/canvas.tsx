@@ -337,17 +337,23 @@ function CanvasNodeComponent({ id, data, selected, width, height }: NodeProps<Ca
         {isEditing ? (
           <input
             type="text"
+            data-nodrag
+            data-nopan
+            className="bg-transparent border-none text-center outline-none w-full text-xs font-sans text-copy-primary focus:ring-0 p-0 cursor-text select-text nodrag nopan"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleSave}
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
+              e.stopPropagation()
               if (e.key === "Enter") handleSave()
               if (e.key === "Escape") {
                 setEditValue(data.label)
                 setIsEditing(false)
               }
             }}
-            className="bg-transparent border-none text-center outline-none w-full text-xs font-sans text-copy-primary focus:ring-0 p-0 cursor-text select-text"
             autoFocus
           />
         ) : (
@@ -616,9 +622,9 @@ function CollaborativeCanvas() {
   const deleteNode = useCallback((id: string) => {
     const targetNode = nodes.find((n) => n.id === id)
     if (targetNode) {
-      onDelete({ nodes: [targetNode], edges: [] })
+      reactFlowInstance.deleteElements({ nodes: [targetNode] })
     }
-  }, [nodes, onDelete])
+  }, [nodes, reactFlowInstance])
 
   const duplicateNode = useCallback((id: string) => {
     const targetNode = nodes.find((n) => n.id === id)
@@ -637,12 +643,15 @@ function CollaborativeCanvas() {
       } as unknown as NodeChange<CanvasNode>))
 
     const duplicatedNode: CanvasNode = {
-      ...targetNode,
       id: newId,
+      type: targetNode.type,
       position: {
         x: targetNode.position.x + 30,
         y: targetNode.position.y - 45, // Offset above (physically higher in Y) and to the right
       },
+      data: { ...targetNode.data },
+      width: targetNode.width,
+      height: targetNode.height,
       selected: true,
     }
 

@@ -140,7 +140,11 @@
 }
 
 /* React Flow Connection Dragging UX: show all handles with a glow */
-.react-flow--connectiong .react-flow__handle {
+.react-flow--connecting .react-flow__handle,
+.react-flow__handle.connecting,
+.react-flow__handle.connectingfrom,
+.react-flow__handle.connectingto,
+.react-flow__handle.valid {
   opacity: 1 !important;
   scale: 1.4;
   box-shadow: 0 0 8px var(--accent-primary);

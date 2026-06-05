@@ -13,8 +13,8 @@ export type CanvasNode = Node<CanvasNodeData, "canvasNode">
 export interface CanvasEdgeData extends Record<string, unknown> {
   label?: string
   directed?: boolean
-  controlX?: number
-  controlY?: number
+  controlX?: number | null
+  controlY?: number | null
 }
 
 export type CanvasEdge = Edge<CanvasEdgeData, "customCanvasEdge">

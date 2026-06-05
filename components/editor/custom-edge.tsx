@@ -75,6 +75,11 @@ export function CustomCanvasEdge({
 
   // 2. Drag handle logic for mouse adjustments
   const handlePointerDown = (event: React.PointerEvent) => {
+    // Only start dragging for primary mouse input
+    if (event.pointerType !== "mouse" || event.button !== 0) {
+      return
+    }
+
     event.stopPropagation()
     event.preventDefault() // Prevent canvas panning
 
