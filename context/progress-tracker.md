@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Implement Prisma ORM database models, client singleton, and run the initial migration.
+- Implement collaborative node customization controls for double-click editing and colors/shapes.
 
 ## Completed
 
@@ -22,6 +22,11 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Editor Home Integration & Project Mutations Hook (Server-side project fetching, hooks/use-project-actions.ts custom mutation hook, alignment of project ID and Liveblocks room ID, dynamic router refreshing)
 - `[x]` Editor Workspace Shell (Server-side access checks, dynamic route parameter synchronization, collapsible AI copilot side panel, and sharing button)
 - `[x]` Share Collaboration Dialog (Invite/remove collaborators by email, enrich display names/avatars via Clerk Backend API)
+- `[x]` Liveblocks Setup (Configuring liveblocks.config.ts, caching lib/liveblocks-client.ts client, and creating /api/liveblocks-auth route)
+- `[x]` Base Canvas (React Flow wrapper with LiveblocksProvider, RoomProvider, ClientSideSuspense, error fallback, useLiveblocksFlow, types/canvas.ts)
+- `[x]` Shape Panel (Bottom toolbar, shape drag-and-drop to canvas, useReactFlow coordinate conversion, custom canvasNode component rendering shapes as bordered rectangles)
+- `[x]` Collaborative Node Customization & Controls (Feature 13: Nodes Color Toolbar floating toolbar with 8-color swatches, shape mutations, duplications, and deletions)
+- `[x]` Collaborative Edge Customization & Adjustments (Feature 14: customCanvasEdge renderer with draggable control points, Directed/Undirected toggles, and inline labels)
 
 ## In Progress
 
@@ -29,7 +34,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Canvas Integration with React Flow & Liveblocks
+- Persistence Layer (Database Canvas Snapshots)
 
 ## Open Questions
 

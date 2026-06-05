@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ProjectProvider, useProjects, Project } from "@/contexts/project-context"
 import { Sparkles, LayoutGrid, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Canvas } from "@/components/editor/canvas"
 
 function EditorWorkspaceContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -37,41 +38,33 @@ function EditorWorkspaceContent() {
         {/* Central Canvas and Right AI Sidebar Wrapper */}
         <div className="flex-1 flex overflow-hidden bg-base">
           {/* System Design Canvas Area */}
-          <main className="flex-1 relative bg-base flex items-center justify-center p-6 select-none overflow-hidden">
+          <main className={cn(
+            "flex-1 relative bg-base select-none overflow-hidden",
+            activeProject ? "p-0" : "flex items-center justify-center p-6"
+          )}>
             
-            {/* Subtle Grid Background Pattern */}
-            <div 
-              className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-              style={{
-                backgroundImage: `
-                  linear-gradient(to right, var(--text-primary) 1px, transparent 1px),
-                  linear-gradient(to bottom, var(--text-primary) 1px, transparent 1px)
-                `,
-                backgroundSize: "24px 24px"
-              }}
-            />
+            {!activeProject && (
+              <>
+                {/* Subtle Grid Background Pattern */}
+                <div 
+                  className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(to right, var(--text-primary) 1px, transparent 1px),
+                      linear-gradient(to bottom, var(--text-primary) 1px, transparent 1px)
+                    `,
+                    backgroundSize: "24px 24px"
+                  }}
+                />
 
-            {/* Abstract background glows */}
-            <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-brand/5 opacity-[0.03] blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-1/4 right-1/3 w-[600px] h-[600px] rounded-full bg-brand-ai/5 opacity-[0.03] blur-[150px] pointer-events-none" />
+                {/* Abstract background glows */}
+                <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-brand/5 opacity-[0.03] blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-1/4 right-1/3 w-[600px] h-[600px] rounded-full bg-brand-ai/5 opacity-[0.03] blur-[150px] pointer-events-none" />
+              </>
+            )}
 
             {activeProject ? (
-              /* Canvas active placeholder content */
-              <div className="relative text-center max-w-md mx-auto z-10 flex flex-col items-center gap-4 animate-in fade-in duration-300">
-                <div className="h-14 w-14 rounded-2xl bg-brand-dim border border-brand/20 flex items-center justify-center mb-2 shadow-lg shadow-brand/5">
-                  <LayoutGrid className="h-6 w-6 text-brand" />
-                </div>
-                <h1 className="text-xl font-medium tracking-wide text-copy-primary">
-                  Interactive Canvas
-                </h1>
-                <p className="text-xs text-copy-secondary leading-relaxed font-light">
-                  System architecture workspace initialized for <span className="font-semibold text-brand">{activeProject.name}</span>. The collaborative React Flow layout and visual editor will render here.
-                </p>
-                <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-full bg-subtle border border-surface-border text-[10px] font-mono text-copy-muted select-text">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Room ID: {activeProject.id}
-                </div>
-              </div>
+              <Canvas roomId={activeProject.id} />
             ) : (
               /* Minimal Card-Free Editor Home Screen (when no project is open) */
               <div className="relative text-center max-w-md mx-auto z-10 flex flex-col items-center gap-4 animate-in fade-in duration-300">
