@@ -1,12 +1,14 @@
-import { auth, currentUser } from "@clerk/nextjs/server"
+import { auth } from "@clerk/nextjs/server"
 import { checkProjectAccess } from "@/lib/project-access"
 import { liveblocks, getCursorColor } from "@/lib/liveblocks-client"
 
+// In-memory cache to skip Liveblocks REST API calls once a room has been verified
+const verifiedRooms = new Set<string>()
+
 export async function POST(req: Request) {
-  // 1. Require Clerk authentication
-  const { userId } = await auth()
-  const clerkUser = await currentUser()
-  if (!userId || !clerkUser) {
+  // 1. Require Clerk authentication and retrieve custom session claims
+  const { userId, sessionClaims } = await auth()
+  if (!userId || !sessionClaims) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -37,26 +39,31 @@ export async function POST(req: Request) {
       return Response.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // 4. Ensure the Liveblocks room exists (create only if needed)
-    try {
-      await liveblocks.getOrCreateRoom(cleanRoomId, {
-        defaultAccesses: ["room:write"],
-        metadata: {
-          title: access.project.name || "Untitled Workspace",
-        },
-      })
-    } catch (roomError) {
-      console.error("Failed to get or create Liveblocks room:", roomError)
-      return Response.json({ error: "Failed to initialize collaborative session" }, { status: 500 })
+    // 4. Ensure the Liveblocks room exists (skip if already verified in this server instance)
+    if (!verifiedRooms.has(cleanRoomId)) {
+      try {
+        await liveblocks.getOrCreateRoom(cleanRoomId, {
+          defaultAccesses: ["room:write"],
+          metadata: {
+            title: access.project.name || "Untitled Workspace",
+          },
+        })
+        verifiedRooms.add(cleanRoomId)
+      } catch (roomError) {
+        console.error("Failed to get or create Liveblocks room:", roomError)
+        return Response.json({ error: "Failed to initialize collaborative session" }, { status: 500 })
+      }
     }
 
-    // Get user details for session token
-    const email = clerkUser.emailAddresses[0]?.emailAddress || "anonymous@example.com"
-    const displayName = `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || email
-    const avatarUrl = clerkUser.imageUrl || ""
+    // 5. Retrieve user details directly from local JWT session claims (no network request!)
+    const email = (sessionClaims.email as string) || "anonymous@example.com"
+    const firstName = (sessionClaims.firstName as string) || ""
+    const lastName = (sessionClaims.lastName as string) || ""
+    const displayName = `${firstName} ${lastName}`.trim() || email
+    const avatarUrl = (sessionClaims.imageUrl as string) || ""
     const cursorColor = getCursorColor(userId)
 
-    // 5. Return an authorized session token with user metadata
+    // 6. Return authorized session token with user metadata (local CPU signing operation)
     const { status, body: authBody } = await liveblocks.identifyUser(
       userId,
       {

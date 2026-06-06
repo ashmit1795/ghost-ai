@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { liveblocks } from "@/lib/liveblocks-client"
 
 export async function GET() {
   const { userId } = await auth()
@@ -79,6 +80,19 @@ export async function POST(req: Request) {
         status: 'DRAFT',
       }
     })
+
+    // Pre-create the Liveblocks room asynchronously so it exists by the time the editor is opened
+    try {
+      await liveblocks.getOrCreateRoom(project.id, {
+        defaultAccesses: ["room:write"],
+        metadata: {
+          title: project.name || "Untitled Workspace",
+        },
+      })
+    } catch (roomError) {
+      console.error("Failed to pre-create Liveblocks room on project creation:", roomError)
+    }
+
     return Response.json(project, { status: 201 })
   } catch (error) {
     console.error('Failed to create project:', error)

@@ -16,6 +16,7 @@ import "@liveblocks/react-flow/styles.css"
 // Import Canvas types and constants
 import { CanvasNode, CanvasEdge, NodeShape, NODE_COLORS, NODE_SHAPES, NodeColorKey } from "@/types/canvas"
 import { CustomCanvasEdge } from "./custom-edge"
+import { CanvasControls } from "./canvas-controls"
 
 interface CanvasWrapperProps {
   roomId: string
@@ -753,6 +754,9 @@ function CollaborativeCanvas() {
 
         {/* Floating Pill Toolbar */}
         <ShapePanel onDragStart={handleDragStart} />
+
+        {/* Floating Zoom & History Controls */}
+        <CanvasControls />
       </div>
     </CanvasActionsContext.Provider>
   )
