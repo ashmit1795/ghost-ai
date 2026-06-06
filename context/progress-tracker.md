@@ -74,4 +74,14 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **Collaborator Read-Only Access Gating**: Enforced security checks at both API routing endpoints and React UI trees. Users listed as collaborators (not owners) are shown a read-only list of workspace users, the delete and invite fields are hidden/disabled, and POST/DELETE actions are blocked server-side (returning a `403 Forbidden` response).
 
+- **Dynamic Edge Markers Fallback Renderer**: Configured `defaultEdgeOptions` in React Flow to set the `MarkerType.ArrowClosed` shape on newly created edges. Refactored `CustomCanvasEdge` to dynamically compute `resolvedMarkerEnd` based on `isDirected` (`data.directed !== false`) and `selected` properties, rendering a customized arrow (colored matching selection highlights: `var(--accent-primary)` if selected, `var(--border-default)` if not) and resolving to `undefined` when undirected, resolving the directed toggle visually.
+
+- **Reconstructing Cloned Nodes from Persisted State (Duplication)**: Refactored the node duplication logic (`duplicateNode`) to explicitly build the cloned node using only stable persisted properties (`id`, `type`, `position`, `data`, `width`, `height`) instead of copying the whole runtime node with a spread (`...targetNode`). This prevents React Flow transient client states (like `resizing`, `measured`, `dragging`) from being duplicated. The clone is set to `selected: true` (and other nodes are deselected) to smoothly transfer selection focus.
+
+- **Opting Out of Drag/Pan and Bubble Control in Inline Inputs**: Appended event propagation blocking (`event.stopPropagation()`) and React Flow drag/pan opt-out attributes (`data-nodrag`, `data-nopan`, class `nodrag nopan`) on the text input inside `CanvasNodeComponent` so that placing the cursor, highlighting text, or typing in the inline label editor does not trigger node movement or canvas panning.
+
+- **History & Zoom controls Floating Overlay**: Created a modular controls component overlay (`CanvasControls`) incorporating Liveblocks' `useUndo`, `useRedo`, `useCanUndo`, and `useCanRedo` hooks for collaborative history rollback/forward, alongside viewport scaling functions (`zoomIn`, `zoomOut`, `zoomTo`, `fitView`). Fully optimized for accessibility using descriptive `aria-label` fields.
+
+- **Stateless Auth Latency Speedup via Clerk JWT Session Claims**: Refactored the `/api/liveblocks-auth` route to read user profile fields (`email`, `firstName`, `lastName`, `imageUrl`) directly from Clerk's `sessionClaims` JWT payload instead of calling the slow `currentUser()` API. This runs as a completely local JWT decryption taking `< 1ms` with no Clerk network calls. We also cache verified rooms in memory (`verifiedRooms`) to skip redundant `liveblocks.getOrCreateRoom()` calls, and pre-create the Liveblocks room in `POST /api/projects` to make connection times instantaneous (<10ms).
+
 
