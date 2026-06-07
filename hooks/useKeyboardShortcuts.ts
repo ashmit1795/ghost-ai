@@ -108,7 +108,7 @@ export function useKeyboardShortcuts({
         const selected = nodes.filter((n) => n.selected)
         if (selected.length > 0) {
           clipboardRef.current = selected.map((n) => ({
-            type: n.type,
+            type: (n.type || "canvasNode") as "canvasNode",
             position: { x: n.position.x, y: n.position.y },
             data: { ...n.data },
             width: n.width,
@@ -168,7 +168,7 @@ export function useKeyboardShortcuts({
 
           return {
             id,
-            type: node.type || "canvasNode",
+            type: "canvasNode",
             position: {
               x: pasteCenter.x + offsetX,
               y: pasteCenter.y + offsetY,
@@ -190,7 +190,7 @@ export function useKeyboardShortcuts({
         const selected = nodes.filter((n) => n.selected)
         if (selected.length > 0) {
           clipboardRef.current = selected.map((n) => ({
-            type: n.type,
+            type: (n.type || "canvasNode") as "canvasNode",
             position: { x: n.position.x, y: n.position.y },
             data: { ...n.data },
             width: n.width,
