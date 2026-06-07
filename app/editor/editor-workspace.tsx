@@ -16,6 +16,7 @@ function EditorWorkspaceContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(true)
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
+  const [isCommentMode, setIsCommentMode] = useState(false)
   const { activeProject, setCreateOpen } = useProjects()
 
   // Holds the import function registered by CollaborativeCanvas
@@ -39,6 +40,8 @@ function EditorWorkspaceContent() {
         isAiSidebarOpen={isAiSidebarOpen}
         onToggleAiSidebar={() => setIsAiSidebarOpen((prev) => !prev)}
         onOpenTemplates={() => setIsTemplatesOpen(true)}
+        isCommentMode={isCommentMode}
+        onToggleCommentMode={() => setIsCommentMode((prev) => !prev)}
       />
 
       {/* Main Workspace Frame */}
@@ -82,6 +85,7 @@ function EditorWorkspaceContent() {
               <Canvas
                 roomId={activeProject.id}
                 onImportTemplate={handleRegisterImport}
+                isCommentMode={isCommentMode}
               />
             ) : (
               /* Minimal Card-Free Editor Home Screen (when no project is open) */

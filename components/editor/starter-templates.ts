@@ -1,4 +1,4 @@
-import { CanvasNode, CanvasEdge, NodeColorKey, NodeShape } from "@/types/canvas"
+import { CanvasNode, CanvasEdge, NodeColorKey, NodeShape, CanvasNodeType } from "@/types/canvas"
 
 export interface CanvasTemplate {
   id: string
@@ -16,24 +16,42 @@ function node(
   x: number,
   y: number,
   options: {
+    type?: CanvasNodeType
     shape?: NodeShape
-    color?: NodeColorKey
+    color?: string
     width?: number
     height?: number
+    fontSize?: "sm" | "md" | "lg" | "xl"
+    textAlign?: "left" | "center" | "right"
+    bold?: boolean
+    italic?: boolean
+    iconId?: string
+    commentText?: string
+    commentAuthor?: string
+    commentResolved?: boolean
   } = {}
 ): CanvasNode {
+  const nodeType = options.type ?? "canvasNode"
   return {
     id,
-    type: "canvasNode",
+    type: nodeType,
     position: { x, y },
     data: {
       label,
-      shape: options.shape ?? "rectangle",
-      color: options.color ?? "neutral",
+      shape: options.shape ?? (nodeType === "canvasNode" ? "rectangle" : undefined),
+      color: options.color ?? (nodeType === "stickyNote" ? "yellow" : "neutral"),
+      fontSize: options.fontSize,
+      textAlign: options.textAlign,
+      bold: options.bold,
+      italic: options.italic,
+      iconId: options.iconId,
+      commentText: options.commentText,
+      commentAuthor: options.commentAuthor,
+      commentResolved: options.commentResolved,
     },
-    width: options.width ?? 150,
-    height: options.height ?? 60,
-  }
+    width: options.width ?? (nodeType === "stickyNote" ? 180 : nodeType === "textBlock" ? 200 : nodeType === "iconNode" ? 100 : 150),
+    height: options.height ?? (nodeType === "stickyNote" ? 120 : nodeType === "textBlock" ? 60 : nodeType === "iconNode" ? 100 : 60),
+  } as CanvasNode
 }
 
 // Helper to build a canvas edge concisely
@@ -390,6 +408,76 @@ const threeTierTemplate: CanvasTemplate = {
   ],
 }
 
+// ─── TEMPLATE 9: Cloud Serverless Architecture (AWS) ──────────────────────────
+const cloudArchitectureTemplate: CanvasTemplate = {
+  id: "cloud-aws-architecture",
+  name: "AWS Serverless Architecture",
+  description: "A serverless cloud infrastructure built using AWS Lambda, S3, RDS and CloudFront service icons.",
+  category: "Architecture",
+  nodes: [
+    node("dns", "Web Client", -120, 150, { type: "iconNode", iconId: "client-browser", color: "neutral" }),
+    node("cdn", "CloudFront CDN", 50, 150, { type: "iconNode", iconId: "aws-cloudfront", color: "blue" }),
+    node("alb", "Application ELB", 220, 150, { type: "iconNode", iconId: "aws-elb", color: "blue" }),
+    node("lambda-write", "Write Lambda", 390, 50, { type: "iconNode", iconId: "aws-lambda", color: "orange" }),
+    node("lambda-read", "Read Lambda", 390, 250, { type: "iconNode", iconId: "aws-lambda", color: "orange" }),
+    node("s3", "S3 Bucket", 560, 50, { type: "iconNode", iconId: "aws-s3", color: "green" }),
+    node("rds", "RDS Database", 560, 250, { type: "iconNode", iconId: "aws-rds", color: "green" }),
+  ],
+  edges: [
+    edge("e-dns-cdn", "dns", "cdn"),
+    edge("e-cdn-alb", "cdn", "alb"),
+    edge("e-alb-lw", "alb", "lambda-write", { sourceHandle: "r", targetHandle: "l" }),
+    edge("e-alb-lr", "alb", "lambda-read", { sourceHandle: "r", targetHandle: "l" }),
+    edge("e-lw-s3", "lambda-write", "s3"),
+    edge("e-lw-rds", "lambda-write", "rds"),
+    edge("e-lr-rds", "lambda-read", "rds"),
+  ],
+}
+
+// ─── TEMPLATE 10: Annotated Architecture Spec with Comments ─────────────────
+const annotatedDesignTemplate: CanvasTemplate = {
+  id: "annotated-design",
+  name: "Annotated Specs with Comments",
+  description: "A system diagram showing how to annotate architectures using sticky notes, text blocks, and comment threads.",
+  category: "Architecture",
+  nodes: [
+    // Header Annotation
+    node("title", "Core Checkout Pipeline Specs", 120, -60, { type: "textBlock", fontSize: "xl", bold: true, color: "blue", width: 350, height: 40 }),
+    
+    // Architecture Elements
+    node("gw", "API Gateway", 20, 100, { shape: "hexagon", color: "blue" }),
+    node("auth", "Auth Checker", 200, 20, { shape: "pill", color: "green" }),
+    node("order", "Order Processor", 200, 180, { shape: "pill", color: "orange" }),
+    
+    // Sticky Notes
+    node("sticky-note", "Check out rules:\n- Rate limit per client IP\n- Validate tokens locally via Auth Service.", 10, 260, { type: "stickyNote", color: "yellow", fontSize: "sm" }),
+    
+    // Comments (Resolved & Unresolved)
+    node("comment-active", "", 420, 180, { 
+      type: "stickyNote", 
+      color: "pink", 
+      fontSize: "sm", 
+      commentText: "Do we need a Redis cache for order processing?", 
+      commentAuthor: "Ashmit", 
+      commentResolved: false 
+    }),
+    node("comment-resolved", "", -180, 20, { 
+      type: "stickyNote", 
+      color: "green", 
+      fontSize: "sm", 
+      commentText: "JWT public key rotation verified.", 
+      commentAuthor: "Collab", 
+      commentResolved: true 
+    }),
+  ],
+  edges: [
+    edge("e-gw-auth", "gw", "auth", { sourceHandle: "t", targetHandle: "l" }),
+    edge("e-gw-order", "gw", "order", { sourceHandle: "b", targetHandle: "l" }),
+    edge("e-comment-active-order", "comment-active", "order", { sourceHandle: "l", targetHandle: "r", label: "discussion" }),
+    edge("e-comment-res-auth", "comment-resolved", "auth", { sourceHandle: "r", targetHandle: "l" }),
+  ],
+}
+
 export const CANVAS_TEMPLATES: CanvasTemplate[] = [
   microservicesTemplate,
   ciCdTemplate,
@@ -399,4 +487,6 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
   mindMapTemplate,
   dataPipelineTemplate,
   threeTierTemplate,
+  cloudArchitectureTemplate,
+  annotatedDesignTemplate,
 ]

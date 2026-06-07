@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react"
 import { useReactFlow } from "@xyflow/react"
-import { CanvasNode, CanvasNodeData } from "@/types/canvas"
+import { CanvasNode, CanvasNodeData, CanvasNodeType } from "@/types/canvas"
 
-interface ClipboardNode {
-  type: "canvasNode"
+export interface ClipboardNode {
+  type: CanvasNodeType
   position: { x: number; y: number }
   data: CanvasNodeData
   width?: number
@@ -18,6 +18,9 @@ interface UseKeyboardShortcutsProps {
   addNodes: (nodes: CanvasNode[]) => void
   deleteSelectedNodes: () => void
   duplicateSelectedNodes: () => void
+  clipboard: ClipboardNode[] | null
+  setClipboard: (val: ClipboardNode[] | null) => void
+  pasteNodes: (position?: { x: number; y: number }) => void
 }
 
 export function useKeyboardShortcuts({
@@ -28,8 +31,10 @@ export function useKeyboardShortcuts({
   addNodes,
   deleteSelectedNodes,
   duplicateSelectedNodes,
+  clipboard,
+  setClipboard,
+  pasteNodes,
 }: UseKeyboardShortcutsProps) {
-  const clipboardRef = useRef<ClipboardNode[] | null>(null)
   const mouseRef = useRef<{ clientX: number; clientY: number } | null>(null)
 
   useEffect(() => {
@@ -107,13 +112,13 @@ export function useKeyboardShortcuts({
         event.preventDefault()
         const selected = nodes.filter((n) => n.selected)
         if (selected.length > 0) {
-          clipboardRef.current = selected.map((n) => ({
-            type: (n.type || "canvasNode") as "canvasNode",
+          setClipboard(selected.map((n) => ({
+            type: n.type || "canvasNode",
             position: { x: n.position.x, y: n.position.y },
             data: { ...n.data },
             width: n.width,
             height: n.height,
-          }))
+          })))
         }
         return
       }
@@ -121,66 +126,17 @@ export function useKeyboardShortcuts({
       // 7. Paste: Cmd/Ctrl + V
       if (ctrlKey && keyLower === "v") {
         event.preventDefault()
-        if (!clipboardRef.current || clipboardRef.current.length === 0) return
-
-        const copiedNodes = clipboardRef.current
+        if (!clipboard || clipboard.length === 0) return
 
         // Determine destination canvas coordinates
-        let pasteCenter: { x: number; y: number }
+        let pasteCenter: { x: number; y: number } | undefined = undefined
         if (mouseRef.current) {
-          // Convert screen client coordinates to flow coordinate system
           pasteCenter = reactFlowInstance.screenToFlowPosition({
             x: mouseRef.current.clientX,
             y: mouseRef.current.clientY,
           })
-        } else {
-          // Fallback to center of the viewport
-          const viewport = reactFlowInstance.getViewport()
-          pasteCenter = {
-            x: -viewport.x / viewport.zoom + window.innerWidth / (2 * viewport.zoom),
-            y: -viewport.y / viewport.zoom + window.innerHeight / (2 * viewport.zoom),
-          }
         }
-
-        // Calculate center of copied bounding box to align paste properly
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-        copiedNodes.forEach((node) => {
-          const w = node.width || 150
-          const h = node.height || 80
-          if (node.position.x < minX) minX = node.position.x
-          if (node.position.y < minY) minY = node.position.y
-          if (node.position.x + w > maxX) maxX = node.position.x + w
-          if (node.position.y + h > maxY) maxY = node.position.y + h
-        })
-
-        const copiedCenter = {
-          x: minX + (maxX - minX) / 2,
-          y: minY + (maxY - minY) / 2,
-        }
-
-        const newNodes: CanvasNode[] = copiedNodes.map((node) => {
-          const shape = node.data.shape || "rectangle"
-          const id = `${shape}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-          
-          // Align copied center to the target paste position
-          const offsetX = node.position.x - copiedCenter.x
-          const offsetY = node.position.y - copiedCenter.y
-
-          return {
-            id,
-            type: "canvasNode",
-            position: {
-              x: pasteCenter.x + offsetX,
-              y: pasteCenter.y + offsetY,
-            },
-            data: { ...node.data },
-            width: node.width,
-            height: node.height,
-            selected: true,
-          }
-        })
-
-        addNodes(newNodes)
+        pasteNodes(pasteCenter)
         return
       }
 
@@ -189,13 +145,13 @@ export function useKeyboardShortcuts({
         event.preventDefault()
         const selected = nodes.filter((n) => n.selected)
         if (selected.length > 0) {
-          clipboardRef.current = selected.map((n) => ({
-            type: (n.type || "canvasNode") as "canvasNode",
+          setClipboard(selected.map((n) => ({
+            type: n.type || "canvasNode",
             position: { x: n.position.x, y: n.position.y },
             data: { ...n.data },
             width: n.width,
             height: n.height,
-          }))
+          })))
           deleteSelectedNodes()
         }
         return
@@ -213,5 +169,6 @@ export function useKeyboardShortcuts({
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [reactFlowInstance, undo, redo, nodes, addNodes, deleteSelectedNodes, duplicateSelectedNodes])
+  }, [reactFlowInstance, undo, redo, nodes, addNodes, deleteSelectedNodes, duplicateSelectedNodes, clipboard, setClipboard, pasteNodes])
 }
+
