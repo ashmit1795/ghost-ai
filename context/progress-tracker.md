@@ -85,4 +85,6 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **Stateless Auth Latency Speedup via Clerk JWT Session Claims**: Refactored the `/api/liveblocks-auth` route to read user profile fields (`email`, `firstName`, `lastName`, `imageUrl`) directly from Clerk's `sessionClaims` JWT payload instead of calling the slow `currentUser()` API. This runs as a completely local JWT decryption taking `< 1ms` with no Clerk network calls. We also cache verified rooms in memory (`verifiedRooms`) to skip redundant `liveblocks.getOrCreateRoom()` calls, and pre-create the Liveblocks room in `POST /api/projects` to make connection times instantaneous (<10ms).
 
+- **In-Memory Clipboard & Cursor-Relative Paste Positioning**: Added support for complete clipboard operations (`Ctrl+C`, `Ctrl+V`, `Ctrl+X`, `Ctrl+D`, `Delete`, `Backspace`) for canvas nodes. To ensure a premium UX, the paste operation tracks mouse movement to center the pasted elements directly under the user's cursor on the canvas, falling back to the viewport center. Preserves relative node spacing during multi-node paste, and isolates keyboard event triggers from active text inputs to avoid interference.
+
 

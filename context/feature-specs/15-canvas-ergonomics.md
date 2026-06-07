@@ -36,8 +36,9 @@ Add a floating control bar for zoom and undo/redo, then wire the same actions to
    - `Cmd/Ctrl + Z` to undo
    - `Cmd/Ctrl + Shift + Z` to redo
    - `Cmd/Ctrl + Y` to redo
+   - `Cmd/Ctrl + D` to duplicate the selected node(s) with an offset
    - `Cmd/Ctrl + C` to copy the selected node(s)
-   - `Cmd/Ctrl + V` to paste the copied node(s)
+   - `Cmd/Ctrl + V` to paste the copied node(s) centered at the current mouse pointer location on the canvas
    - `Cmd/Ctrl + X` to cut the selected node(s)
    - `Delete` or `Backspace` to delete the selected node(s)
 

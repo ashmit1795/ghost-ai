@@ -526,8 +526,79 @@ function CollaborativeCanvas() {
   const undo = useUndo()
   const redo = useRedo()
 
+  const addNodes = useCallback((newNodes: CanvasNode[]) => {
+    const selectionChanges = nodes
+      .filter((n) => n.selected)
+      .map((n) => ({
+        id: n.id,
+        type: "select",
+        selected: false,
+      } as unknown as NodeChange<CanvasNode>))
+
+    onNodesChange([
+      ...selectionChanges,
+      ...newNodes.map((n) => ({
+        type: "add",
+        item: n,
+      } as unknown as NodeChange<CanvasNode>)),
+    ])
+  }, [nodes, onNodesChange])
+
+  const deleteSelectedNodes = useCallback(() => {
+    const selectedNodes = nodes.filter((n) => n.selected)
+    if (selectedNodes.length > 0) {
+      reactFlowInstance.deleteElements({ nodes: selectedNodes })
+    }
+  }, [nodes, reactFlowInstance])
+
+  const duplicateSelectedNodes = useCallback(() => {
+    const selectedNodes = nodes.filter((n) => n.selected)
+    if (selectedNodes.length === 0) return
+
+    const selectionChanges = nodes
+      .filter((n) => n.selected)
+      .map((n) => ({
+        id: n.id,
+        type: "select",
+        selected: false,
+      } as unknown as NodeChange<CanvasNode>))
+
+    const duplicatedNodes = selectedNodes.map((targetNode) => {
+      const shape = targetNode.data.shape || "rectangle"
+      const newId = `${shape}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+      return {
+        id: newId,
+        type: targetNode.type,
+        position: {
+          x: targetNode.position.x + 30,
+          y: targetNode.position.y - 45,
+        },
+        data: { ...targetNode.data },
+        width: targetNode.width,
+        height: targetNode.height,
+        selected: true,
+      }
+    })
+
+    onNodesChange([
+      ...selectionChanges,
+      ...duplicatedNodes.map((n) => ({
+        type: "add",
+        item: n,
+      } as unknown as NodeChange<CanvasNode>)),
+    ])
+  }, [nodes, onNodesChange])
+
   // Bind viewport and history keyboard shortcuts
-  useKeyboardShortcuts({ reactFlowInstance, undo, redo })
+  useKeyboardShortcuts({
+    reactFlowInstance,
+    undo,
+    redo,
+    nodes,
+    addNodes,
+    deleteSelectedNodes,
+    duplicateSelectedNodes,
+  })
 
   // Handles drag start payload
   const handleDragStart = useCallback((event: React.DragEvent, shape: NodeShape) => {
