@@ -1,7 +1,7 @@
 "use client"
 
 import React, { Component, ErrorInfo, ReactNode, useRef, useCallback, useState, useEffect, useContext } from "react"
-import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, ReactFlowProvider, useReactFlow, Handle, Position, NodeProps, NodeResizer, NodeChange, NodeToolbar, MarkerType } from "@xyflow/react"
+import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, ReactFlowProvider, useReactFlow, Handle, Position, NodeProps, NodeResizer, NodeChange, EdgeChange, NodeToolbar, MarkerType } from "@xyflow/react"
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense, useMutation, useUndo, useRedo } from "@liveblocks/react/suspense"
 import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow"
 import { LiveObject } from "@liveblocks/client"
@@ -16,11 +16,13 @@ import "@liveblocks/react-flow/styles.css"
 
 // Import Canvas types and constants
 import { CanvasNode, CanvasEdge, NodeShape, NODE_COLORS, NODE_SHAPES, NodeColorKey } from "@/types/canvas"
+import { CanvasTemplate } from "./starter-templates"
 import { CustomCanvasEdge } from "./custom-edge"
 import { CanvasControls } from "./canvas-controls"
 
 interface CanvasWrapperProps {
   roomId: string
+  onImportTemplate?: (importFn: (template: CanvasTemplate) => void) => void
 }
 
 // 1. Error Boundary Component
@@ -494,7 +496,11 @@ function ShapePanel({ onDragStart }: ShapePanelProps) {
 }
 
 // 4. Collaborative Canvas (inside ReactFlowProvider)
-function CollaborativeCanvas() {
+interface CollaborativeCanvasProps {
+  onImportTemplate?: (importFn: (template: CanvasTemplate) => void) => void
+}
+
+function CollaborativeCanvas({ onImportTemplate }: CollaborativeCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const reactFlowInstance = useReactFlow()
 
@@ -588,6 +594,50 @@ function CollaborativeCanvas() {
       } as unknown as NodeChange<CanvasNode>)),
     ])
   }, [nodes, onNodesChange])
+
+  // Import a template: clear canvas then populate with template nodes + edges
+  const importTemplate = useCallback((template: CanvasTemplate) => {
+    // Remove all existing nodes (edges are removed automatically with their nodes)
+    const removeNodeChanges = nodes.map((n) => ({
+      type: "remove",
+      id: n.id,
+    } as unknown as NodeChange<CanvasNode>))
+
+    const removeEdgeChanges = edges.map((e) => ({
+      type: "remove",
+      id: e.id,
+    } as unknown as EdgeChange<CanvasEdge>))
+
+    if (removeNodeChanges.length > 0) onNodesChange(removeNodeChanges)
+    if (removeEdgeChanges.length > 0) onEdgesChange(removeEdgeChanges)
+
+    // Add template nodes and edges after a micro-tick to allow removal to settle
+    setTimeout(() => {
+      const addNodeChanges = template.nodes.map((n) => ({
+        type: "add",
+        item: { ...n },
+      } as unknown as NodeChange<CanvasNode>))
+
+      const addEdgeChanges = template.edges.map((e) => ({
+        type: "add",
+        item: { ...e },
+      } as unknown as EdgeChange<CanvasEdge>))
+
+      if (addNodeChanges.length > 0) onNodesChange(addNodeChanges)
+      if (addEdgeChanges.length > 0) onEdgesChange(addEdgeChanges)
+
+      setTimeout(() => {
+        reactFlowInstance.fitView({ duration: 400, padding: 0.15 })
+      }, 80)
+    }, 50)
+  }, [nodes, edges, onNodesChange, onEdgesChange, reactFlowInstance])
+
+  // Register the import function with the parent component
+  useEffect(() => {
+    if (onImportTemplate) {
+      onImportTemplate(importTemplate)
+    }
+  }, [onImportTemplate, importTemplate])
 
   // Bind viewport and history keyboard shortcuts
   useKeyboardShortcuts({
@@ -880,7 +930,7 @@ function CanvasErrorState({ onReset }: { onReset: () => void }) {
 }
 
 // 7. Canvas Root Component
-export function Canvas({ roomId }: CanvasWrapperProps) {
+export function Canvas({ roomId, onImportTemplate }: CanvasWrapperProps) {
   const [errorKey, setErrorKey] = useState(0)
 
   const handleReset = () => {
@@ -897,7 +947,7 @@ export function Canvas({ roomId }: CanvasWrapperProps) {
           >
             <ClientSideSuspense fallback={<CanvasLoadingState />}>
               <ReactFlowProvider>
-                <CollaborativeCanvas />
+                <CollaborativeCanvas onImportTemplate={onImportTemplate} />
               </ReactFlowProvider>
             </ClientSideSuspense>
           </RoomProvider>

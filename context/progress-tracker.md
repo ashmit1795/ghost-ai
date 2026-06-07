@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Implement collaborative node customization controls for double-click editing and colors/shapes.
+- Implement persistence layer (database canvas snapshots via Vercel Blob).
 
 ## Completed
 
@@ -28,6 +28,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Collaborative Node Customization & Controls (Feature 13: Nodes Color Toolbar floating toolbar with 8-color swatches, shape mutations, duplications, and deletions)
 - `[x]` Collaborative Edge Customization & Adjustments (Feature 14: customCanvasEdge renderer with draggable control points, Directed/Undirected toggles, and inline labels)
 - `[x]` Canvas Ergonomics (Feature 15: keyboard shortcuts hook for canvas zoom and Liveblocks collaborative history actions, input focus isolation, and float controls overlay integration)
+- `[x]` Starter Template Library (Feature 16: `CanvasTemplate` type, 8 pre-built templates across architecture/devops/flowchart/org-chart/mind-map categories, lightweight SVG mini-preview modal with category badges, navbar `LayoutTemplate` button, and canvas `importTemplate` action that clears and replaces canvas content then fits the view)
 
 ## In Progress
 
@@ -35,7 +36,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Persistence Layer (Database Canvas Snapshots)
+- Persistence Layer (Database Canvas Snapshots via Vercel Blob)
 
 ## Open Questions
 
