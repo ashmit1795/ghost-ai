@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef } from "react"
-import { Clipboard, Maximize, ZoomIn, ZoomOut, Link, StickyNote, Type, BoxSelect } from "lucide-react"
+import { Clipboard, Maximize, ZoomIn, ZoomOut, Link, StickyNote, Type, BoxSelect, Grid } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface CanvasContextMenuProps {
@@ -13,6 +13,7 @@ interface CanvasContextMenuProps {
   onFitView: () => void
   onAddSticky: () => void
   onAddTextBlock: () => void
+  onAddIconNode?: () => void
   onZoomIn: () => void
   onZoomOut: () => void
   onCopyLink: () => void
@@ -28,6 +29,7 @@ export function CanvasContextMenu({
   onFitView,
   onAddSticky,
   onAddTextBlock,
+  onAddIconNode,
   onZoomIn,
   onZoomOut,
   onCopyLink,
@@ -93,6 +95,19 @@ export function CanvasContextMenu({
         <Type className="h-3.5 w-3.5 text-copy-muted" />
         <span>Add Text Block</span>
       </button>
+
+      {onAddIconNode && (
+        <button
+          onClick={() => {
+            onAddIconNode()
+            onClose()
+          }}
+          className="flex items-center gap-2.5 px-3 py-2 text-xs text-copy-secondary hover:text-copy-primary hover:bg-subtle rounded-xl transition-all duration-150 text-left w-full cursor-pointer"
+        >
+          <Grid className="h-3.5 w-3.5 text-copy-muted" />
+          <span>Add Icon Node</span>
+        </button>
+      )}
 
       <div className="h-[1px] bg-surface-border-subtle my-1" />
 

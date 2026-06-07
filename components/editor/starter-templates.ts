@@ -9,6 +9,14 @@ export interface CanvasTemplate {
   edges: CanvasEdge[]
 }
 
+// Default dimensions per node type
+const DEFAULT_NODE_DIMENSIONS: Record<string, { width: number; height: number }> = {
+  stickyNote: { width: 180, height: 120 },
+  textBlock:  { width: 200, height: 60  },
+  iconNode:   { width: 100, height: 100 },
+  canvasNode: { width: 150, height: 60  },
+}
+
 // Helper to build a canvas node concisely
 function node(
   id: string,
@@ -32,6 +40,7 @@ function node(
   } = {}
 ): CanvasNode {
   const nodeType = options.type ?? "canvasNode"
+  const defaultDims = DEFAULT_NODE_DIMENSIONS[nodeType] ?? DEFAULT_NODE_DIMENSIONS.canvasNode
   return {
     id,
     type: nodeType,
@@ -49,8 +58,8 @@ function node(
       commentAuthor: options.commentAuthor,
       commentResolved: options.commentResolved,
     },
-    width: options.width ?? (nodeType === "stickyNote" ? 180 : nodeType === "textBlock" ? 200 : nodeType === "iconNode" ? 100 : 150),
-    height: options.height ?? (nodeType === "stickyNote" ? 120 : nodeType === "textBlock" ? 60 : nodeType === "iconNode" ? 100 : 60),
+    width: options.width ?? defaultDims.width,
+    height: options.height ?? defaultDims.height,
   } as CanvasNode
 }
 

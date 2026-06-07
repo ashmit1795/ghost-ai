@@ -31,8 +31,8 @@ function computeBounds(nodes: CanvasNode[]): PreviewBounds {
   for (const n of nodes) {
     const x = n.position.x
     const y = n.position.y
-    const w = (n.width as number) ?? 150
-    const h = (n.height as number) ?? 60
+    const w = n.width ?? 150
+    const h = n.height ?? 60
     minX = Math.min(minX, x)
     minY = Math.min(minY, y)
     maxX = Math.max(maxX, x + w)
@@ -42,8 +42,8 @@ function computeBounds(nodes: CanvasNode[]): PreviewBounds {
 }
 
 function getNodeCenter(node: CanvasNode, bounds: PreviewBounds, scale: number, offsetX: number, offsetY: number) {
-  const w = (node.width as number) ?? 150
-  const h = (node.height as number) ?? 60
+  const w = node.width ?? 150
+  const h = node.height ?? 60
   const cx = (node.position.x + w / 2 - bounds.minX) * scale + NODE_PADDING + offsetX
   const cy = (node.position.y + h / 2 - bounds.minY) * scale + NODE_PADDING + offsetY
   return { cx, cy }
@@ -62,8 +62,8 @@ function renderNodeShape(
   offsetY: number,
   index: number
 ) {
-  const w = Math.max(((node.width as number) ?? 150) * scale, 20)
-  const h = Math.max(((node.height as number) ?? 60) * scale, 12)
+  const w = Math.max((node.width ?? 150) * scale, 20)
+  const h = Math.max((node.height ?? 60) * scale, 12)
   const x = (node.position.x - bounds.minX) * scale + NODE_PADDING + offsetX
   const y = (node.position.y - bounds.minY) * scale + NODE_PADDING + offsetY
   const shape: NodeShape = node.data.shape ?? "rectangle"
@@ -198,15 +198,16 @@ function TemplateMiniPreview({ nodes, edges }: TemplateMiniPreviewProps) {
   const offsetX = (availW - scaledW) / 2
   const offsetY = (availH - scaledH) / 2
 
+  const transform = useMemo(() => ({ scale, offsetX, offsetY }), [scale, offsetX, offsetY])
+
   // Build a node center map for edge rendering
   const centerMap = useMemo(() => {
     const map: Record<string, { cx: number; cy: number }> = {}
     for (const n of nodes) {
-      map[n.id] = getNodeCenter(n, bounds, scale, offsetX, offsetY)
+      map[n.id] = getNodeCenter(n, bounds, transform.scale, transform.offsetX, transform.offsetY)
     }
     return map
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, bounds, scale, offsetX, offsetY])
+  }, [nodes, bounds, transform])
 
   return (
     <svg
@@ -322,6 +323,26 @@ function TemplateCard({ template, onImport }: TemplateCardProps) {
 
 export function StarterTemplatesModal({ isOpen, onClose, onImport }: StarterTemplatesModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const previousActiveElementRef = useRef<Element | null>(null)
+
+  // Save focus before opening; move focus into modal on open; restore on close
+  useEffect(() => {
+    if (isOpen) {
+      previousActiveElementRef.current = document.activeElement
+      // Defer so the modal has rendered before focusing
+      const raf = requestAnimationFrame(() => {
+        closeButtonRef.current?.focus()
+      })
+      return () => cancelAnimationFrame(raf)
+    } else {
+      const prev = previousActiveElementRef.current
+      if (prev && (prev as HTMLElement).focus) {
+        ;(prev as HTMLElement).focus()
+      }
+      previousActiveElementRef.current = null
+    }
+  }, [isOpen])
 
   // Close on Escape
   useEffect(() => {
@@ -375,6 +396,7 @@ export function StarterTemplatesModal({ isOpen, onClose, onImport }: StarterTemp
             </div>
           </div>
           <button
+            ref={closeButtonRef}
             id="close-templates-modal"
             onClick={onClose}
             className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-subtle text-copy-muted hover:text-copy-primary transition-colors duration-200"

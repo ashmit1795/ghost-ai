@@ -102,16 +102,19 @@ export function useKeyboardShortcuts({
 
       // 5. Duplicate: Cmd/Ctrl + D
       if (ctrlKey && keyLower === "d") {
-        event.preventDefault()
-        duplicateSelectedNodes()
+        const selected = nodes.filter((n) => n.selected)
+        if (selected.length > 0) {
+          event.preventDefault()
+          duplicateSelectedNodes()
+        }
         return
       }
 
       // 6. Copy: Cmd/Ctrl + C
       if (ctrlKey && keyLower === "c") {
-        event.preventDefault()
         const selected = nodes.filter((n) => n.selected)
         if (selected.length > 0) {
+          event.preventDefault()
           setClipboard(selected.map((n) => ({
             type: n.type || "canvasNode",
             position: { x: n.position.x, y: n.position.y },
@@ -142,9 +145,9 @@ export function useKeyboardShortcuts({
 
       // 8. Cut: Cmd/Ctrl + X
       if (ctrlKey && keyLower === "x") {
-        event.preventDefault()
         const selected = nodes.filter((n) => n.selected)
         if (selected.length > 0) {
+          event.preventDefault()
           setClipboard(selected.map((n) => ({
             type: n.type || "canvasNode",
             position: { x: n.position.x, y: n.position.y },
@@ -159,8 +162,11 @@ export function useKeyboardShortcuts({
 
       // 9. Delete / Backspace
       if (event.key === "Delete" || event.key === "Backspace") {
-        event.preventDefault()
-        deleteSelectedNodes()
+        const selected = nodes.filter((n) => n.selected)
+        if (selected.length > 0) {
+          event.preventDefault()
+          deleteSelectedNodes()
+        }
         return
       }
     }

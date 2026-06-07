@@ -1834,7 +1834,7 @@ function CollaborativeCanvas({ onImportTemplate, isCommentMode = false }: Collab
       x: menuPosition.x,
       y: menuPosition.y,
     })
-    const id = `sticky_${Date.now()}`
+    const id = `sticky_${crypto.randomUUID()}`
     const newNode: CanvasNode = {
       id,
       type: "stickyNote",
@@ -1870,6 +1870,28 @@ function CollaborativeCanvas({ onImportTemplate, isCommentMode = false }: Collab
       },
       width: 200,
       height: 60,
+    }
+    onNodesChange([{ type: "add", item: newNode } as any])
+  }, [menuPosition, reactFlowInstance, onNodesChange])
+
+  const handleAddIconNodeFromMenu = useCallback(() => {
+    if (!menuPosition) return
+    const position = reactFlowInstance.screenToFlowPosition({
+      x: menuPosition.x,
+      y: menuPosition.y,
+    })
+    const id = `icon_${crypto.randomUUID()}`
+    const newNode: CanvasNode = {
+      id,
+      type: "iconNode",
+      position: { x: position.x - 50, y: position.y - 50 },
+      data: {
+        label: "",
+        color: "neutral",
+        iconId: "aws-lambda",
+      },
+      width: 100,
+      height: 100,
     }
     onNodesChange([{ type: "add", item: newNode } as any])
   }, [menuPosition, reactFlowInstance, onNodesChange])
@@ -2068,6 +2090,7 @@ function CollaborativeCanvas({ onImportTemplate, isCommentMode = false }: Collab
             onFitView={() => reactFlowInstance.fitView({ duration: 400 })}
             onAddSticky={handleAddStickyFromMenu}
             onAddTextBlock={handleAddTextBlockFromMenu}
+            onAddIconNode={handleAddIconNodeFromMenu}
             onZoomIn={() => reactFlowInstance.zoomIn()}
             onZoomOut={() => reactFlowInstance.zoomOut()}
             onCopyLink={handleCopyLink}
