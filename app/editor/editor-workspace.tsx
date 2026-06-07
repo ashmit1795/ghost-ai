@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useCallback } from "react"
 import { EditorNavbar } from "@/components/editor/editor-navbar"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
@@ -9,11 +9,26 @@ import { ProjectProvider, useProjects, Project } from "@/contexts/project-contex
 import { Sparkles, LayoutGrid, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Canvas } from "@/components/editor/canvas"
+import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal"
+import { CanvasTemplate } from "@/components/editor/starter-templates"
 
 function EditorWorkspaceContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(true)
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
+  const [isCommentMode, setIsCommentMode] = useState(false)
   const { activeProject, setCreateOpen } = useProjects()
+
+  // Holds the import function registered by CollaborativeCanvas
+  const importTemplateFnRef = useRef<((template: CanvasTemplate) => void) | null>(null)
+
+  const handleRegisterImport = useCallback((fn: (template: CanvasTemplate) => void) => {
+    importTemplateFnRef.current = fn
+  }, [])
+
+  const handleImportTemplate = useCallback((template: CanvasTemplate) => {
+    importTemplateFnRef.current?.(template)
+  }, [])
 
   return (
     <div className="relative flex flex-col h-screen w-screen bg-base overflow-hidden text-copy-primary font-sans antialiased">
@@ -24,6 +39,9 @@ function EditorWorkspaceContent() {
         activeProject={activeProject}
         isAiSidebarOpen={isAiSidebarOpen}
         onToggleAiSidebar={() => setIsAiSidebarOpen((prev) => !prev)}
+        onOpenTemplates={() => setIsTemplatesOpen(true)}
+        isCommentMode={isCommentMode}
+        onToggleCommentMode={() => setIsCommentMode((prev) => !prev)}
       />
 
       {/* Main Workspace Frame */}
@@ -64,7 +82,11 @@ function EditorWorkspaceContent() {
             )}
 
             {activeProject ? (
-              <Canvas roomId={activeProject.id} />
+              <Canvas
+                roomId={activeProject.id}
+                onImportTemplate={handleRegisterImport}
+                isCommentMode={isCommentMode}
+              />
             ) : (
               /* Minimal Card-Free Editor Home Screen (when no project is open) */
               <div className="relative text-center max-w-md mx-auto z-10 flex flex-col items-center gap-4 animate-in fade-in duration-300">
@@ -116,6 +138,13 @@ function EditorWorkspaceContent() {
 
       {/* Global Dialog Overlays */}
       <ProjectDialogs />
+
+      {/* Starter Templates Modal */}
+      <StarterTemplatesModal
+        isOpen={isTemplatesOpen}
+        onClose={() => setIsTemplatesOpen(false)}
+        onImport={handleImportTemplate}
+      />
     </div>
   )
 }

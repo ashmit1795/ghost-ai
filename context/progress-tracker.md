@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Implement collaborative node customization controls for double-click editing and colors/shapes.
+- Implement persistence layer (database canvas snapshots via Vercel Blob).
 
 ## Completed
 
@@ -27,6 +27,9 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Shape Panel (Bottom toolbar, shape drag-and-drop to canvas, useReactFlow coordinate conversion, custom canvasNode component rendering shapes as bordered rectangles)
 - `[x]` Collaborative Node Customization & Controls (Feature 13: Nodes Color Toolbar floating toolbar with 8-color swatches, shape mutations, duplications, and deletions)
 - `[x]` Collaborative Edge Customization & Adjustments (Feature 14: customCanvasEdge renderer with draggable control points, Directed/Undirected toggles, and inline labels)
+- `[x]` Canvas Ergonomics (Feature 15: keyboard shortcuts hook for canvas zoom and Liveblocks collaborative history actions, input focus isolation, and float controls overlay integration)
+- `[x]` Starter Template Library (Feature 16: `CanvasTemplate` type, 8 pre-built templates across architecture/devops/flowchart/org-chart/mind-map categories, lightweight SVG mini-preview modal with category badges, navbar `LayoutTemplate` button, and canvas `importTemplate` action that clears and replaces canvas content then fits the view)
+- `[x]` Canvas Enrichment (Feature 17: Sticky Notes, Text Blocks, and Icon Nodes with category-based popover picker, canvas context menu, connection-drop-to-create node spawning, navbar comment mode, and 2 new templates)
 
 ## In Progress
 
@@ -34,7 +37,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Persistence Layer (Database Canvas Snapshots)
+- Persistence Layer (Database Canvas Snapshots via Vercel Blob)
 
 ## Open Questions
 
@@ -83,5 +86,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - **History & Zoom controls Floating Overlay**: Created a modular controls component overlay (`CanvasControls`) incorporating Liveblocks' `useUndo`, `useRedo`, `useCanUndo`, and `useCanRedo` hooks for collaborative history rollback/forward, alongside viewport scaling functions (`zoomIn`, `zoomOut`, `zoomTo`, `fitView`). Fully optimized for accessibility using descriptive `aria-label` fields.
 
 - **Stateless Auth Latency Speedup via Clerk JWT Session Claims**: Refactored the `/api/liveblocks-auth` route to read user profile fields (`email`, `firstName`, `lastName`, `imageUrl`) directly from Clerk's `sessionClaims` JWT payload instead of calling the slow `currentUser()` API. This runs as a completely local JWT decryption taking `< 1ms` with no Clerk network calls. We also cache verified rooms in memory (`verifiedRooms`) to skip redundant `liveblocks.getOrCreateRoom()` calls, and pre-create the Liveblocks room in `POST /api/projects` to make connection times instantaneous (<10ms).
+
+- **In-Memory Clipboard & Cursor-Relative Paste Positioning**: Added support for complete clipboard operations (`Ctrl+C`, `Ctrl+V`, `Ctrl+X`, `Ctrl+D`, `Delete`, `Backspace`) for canvas nodes. To ensure a premium UX, the paste operation tracks mouse movement to center the pasted elements directly under the user's cursor on the canvas, falling back to the viewport center. Preserves relative node spacing during multi-node paste, and isolates keyboard event triggers from active text inputs to avoid interference.
 
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { PanelLeftClose, PanelLeftOpen, Share2, Sparkles } from "lucide-react"
+import { PanelLeftClose, PanelLeftOpen, Share2, Sparkles, LayoutTemplate, MessageSquare } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import { clerkAppearance } from "@/lib/clerk-theme"
 import { Project } from "@/hooks/use-project-actions"
@@ -14,6 +14,9 @@ interface EditorNavbarProps {
   activeProject?: Project | null;
   isAiSidebarOpen?: boolean;
   onToggleAiSidebar?: () => void;
+  onOpenTemplates?: () => void;
+  isCommentMode?: boolean;
+  onToggleCommentMode?: () => void;
 }
 
 export function EditorNavbar({
@@ -22,6 +25,9 @@ export function EditorNavbar({
   activeProject = null,
   isAiSidebarOpen = false,
   onToggleAiSidebar,
+  onOpenTemplates,
+  isCommentMode = false,
+  onToggleCommentMode,
 }: EditorNavbarProps) {
   const { setShareOpen } = useProjects()
   return (
@@ -66,6 +72,34 @@ export function EditorNavbar({
       <div className="flex items-center gap-3">
         {activeProject && (
           <>
+            {/* Templates Button */}
+            <Button
+              id="open-templates-modal"
+              variant="ghost"
+              size="icon-sm"
+              onClick={onOpenTemplates}
+              className="h-8 w-8 text-copy-muted hover:text-copy-primary hover:bg-subtle rounded-lg transition-colors duration-200"
+              aria-label="Open starter templates"
+              title="Starter Templates"
+            >
+              <LayoutTemplate className="h-4 w-4" />
+            </Button>
+
+            {/* Comment Mode Toggle */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onToggleCommentMode}
+              className={cn(
+                "h-8 w-8 text-copy-muted hover:text-copy-primary hover:bg-subtle rounded-lg transition-colors duration-200",
+                isCommentMode && "text-brand bg-brand/10 hover:bg-brand/20"
+              )}
+              aria-label={isCommentMode ? "Deactivate comment mode" : "Activate comment mode"}
+              title="Comment Mode"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+
             {/* Share Button */}
             <Button
               variant="outline"
