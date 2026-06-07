@@ -27,6 +27,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Shape Panel (Bottom toolbar, shape drag-and-drop to canvas, useReactFlow coordinate conversion, custom canvasNode component rendering shapes as bordered rectangles)
 - `[x]` Collaborative Node Customization & Controls (Feature 13: Nodes Color Toolbar floating toolbar with 8-color swatches, shape mutations, duplications, and deletions)
 - `[x]` Collaborative Edge Customization & Adjustments (Feature 14: customCanvasEdge renderer with draggable control points, Directed/Undirected toggles, and inline labels)
+- `[x]` Canvas Ergonomics (Feature 15: keyboard shortcuts hook for canvas zoom and Liveblocks collaborative history actions, input focus isolation, and float controls overlay integration)
 
 ## In Progress
 

@@ -2,11 +2,12 @@
 
 import React, { Component, ErrorInfo, ReactNode, useRef, useCallback, useState, useEffect, useContext } from "react"
 import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, ReactFlowProvider, useReactFlow, Handle, Position, NodeProps, NodeResizer, NodeChange, NodeToolbar, MarkerType } from "@xyflow/react"
-import { LiveblocksProvider, RoomProvider, ClientSideSuspense, useMutation } from "@liveblocks/react/suspense"
+import { LiveblocksProvider, RoomProvider, ClientSideSuspense, useMutation, useUndo, useRedo } from "@liveblocks/react/suspense"
 import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow"
 import { LiveObject } from "@liveblocks/client"
 import { AlertTriangle, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
 
 // Import CSS styles for React Flow and Liveblocks
 import "@xyflow/react/dist/style.css"
@@ -521,6 +522,12 @@ function CollaborativeCanvas() {
       }
     },
   })
+
+  const undo = useUndo()
+  const redo = useRedo()
+
+  // Bind viewport and history keyboard shortcuts
+  useKeyboardShortcuts({ reactFlowInstance, undo, redo })
 
   // Handles drag start payload
   const handleDragStart = useCallback((event: React.DragEvent, shape: NodeShape) => {
