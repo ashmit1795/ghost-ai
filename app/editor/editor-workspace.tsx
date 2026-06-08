@@ -11,10 +11,11 @@ import { cn } from "@/lib/utils"
 import { Canvas } from "@/components/editor/canvas"
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal"
 import { CanvasTemplate } from "@/components/editor/starter-templates"
+import { AiSidebar } from "@/components/editor/ai-sidebar"
 
 function EditorWorkspaceContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(true)
+  const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false)
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
   const [isCommentMode, setIsCommentMode] = useState(false)
   const { activeProject, setCreateOpen } = useProjects()
@@ -54,10 +55,10 @@ function EditorWorkspaceContent() {
         />
 
         {/* Central Canvas and Right AI Sidebar Wrapper */}
-        <div className="flex-1 flex overflow-hidden bg-base">
+        <div className="flex-1 flex relative overflow-hidden bg-base">
           {/* System Design Canvas Area */}
           <main className={cn(
-            "flex-1 relative bg-base select-none overflow-hidden",
+            "flex-1 relative bg-base select-none overflow-hidden isolate",
             activeProject ? "p-0" : "flex items-center justify-center p-6"
           )}>
             
@@ -86,6 +87,8 @@ function EditorWorkspaceContent() {
                 roomId={activeProject.id}
                 onImportTemplate={handleRegisterImport}
                 isCommentMode={isCommentMode}
+                onCommentPlaced={() => setIsCommentMode(false)}
+                isAiSidebarOpen={isAiSidebarOpen}
               />
             ) : (
               /* Minimal Card-Free Editor Home Screen (when no project is open) */
@@ -108,30 +111,12 @@ function EditorWorkspaceContent() {
 
           </main>
 
-          {/* Right AI Sidebar placeholder */}
+          {/* Right AI Sidebar Panel */}
           {activeProject && (
-            <aside
-              className={cn(
-                "w-80 border-l border-surface-border bg-surface flex flex-col transition-all duration-300 ease-in-out shrink-0 select-none",
-                isAiSidebarOpen ? "translate-x-0 w-80" : "translate-x-full w-0 border-l-0 overflow-hidden"
-              )}
-            >
-              <div className="h-14 flex items-center justify-between px-4 border-b border-surface-border shrink-0">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-brand-ai-text" />
-                  <h2 className="text-sm font-semibold tracking-wider text-copy-primary uppercase">AI Copilot</h2>
-                </div>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                <div className="h-12 w-12 rounded-full bg-brand-ai/15 border border-brand-ai/20 flex items-center justify-center mb-4">
-                  <Sparkles className="h-5 w-5 text-brand-ai-text" />
-                </div>
-                <h3 className="text-xs font-semibold text-copy-secondary mb-1">AI Assistant</h3>
-                <p className="text-[11px] text-copy-faint leading-relaxed max-w-[200px]">
-                  Ghost AI chat sidebar will render here. Describe your system requirements or prompt architectural changes.
-                </p>
-              </div>
-            </aside>
+            <AiSidebar
+              isOpen={isAiSidebarOpen}
+              onClose={() => setIsAiSidebarOpen(false)}
+            />
           )}
         </div>
       </div>

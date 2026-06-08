@@ -1,14 +1,15 @@
 "use client"
 
 import React, { Component, ErrorInfo, ReactNode, useRef, useCallback, useState, useEffect, useContext } from "react"
-import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, ReactFlowProvider, useReactFlow, Handle, Position, NodeProps, NodeResizer, NodeChange, EdgeChange, NodeToolbar, MarkerType } from "@xyflow/react"
-import { LiveblocksProvider, RoomProvider, ClientSideSuspense, useMutation, useUndo, useRedo } from "@liveblocks/react/suspense"
-import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow"
+import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, ReactFlowProvider, useReactFlow, Handle, Position, NodeProps, NodeResizer, NodeChange, EdgeChange, NodeToolbar, MarkerType, useViewport } from "@xyflow/react"
+import { LiveblocksProvider, RoomProvider, ClientSideSuspense, useMutation, useUndo, useRedo, useOthers, useUpdateMyPresence } from "@liveblocks/react/suspense"
+import { useLiveblocksFlow } from "@liveblocks/react-flow"
 import { LiveObject } from "@liveblocks/client"
 import { AlertTriangle, Loader2, Check, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Sparkles, Plus, Grid, Type, StickyNote, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
-import { useUser } from "@clerk/nextjs"
+import { useUser, UserButton } from "@clerk/nextjs"
+import { clerkAppearance } from "@/lib/clerk-theme"
 
 // Import CSS styles for React Flow and Liveblocks
 import "@xyflow/react/dist/style.css"
@@ -28,11 +29,41 @@ function getInitials(name?: string) {
   return name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
 }
 
+interface CanvasAvatarProps {
+  name: string
+  avatar?: string
+  initials: string
+}
+
+function CanvasAvatar({ name, avatar, initials }: CanvasAvatarProps) {
+  const [isBroken, setIsBroken] = useState(false)
+
+  return (
+    <div
+      className="relative group h-8 w-8 rounded-full border-2 border-surface bg-subtle overflow-hidden flex items-center justify-center text-[10px] font-semibold text-copy-primary shadow-inner"
+      title={name}
+    >
+      {avatar && !isBroken ? (
+        <img
+          src={avatar}
+          alt={name}
+          className="h-full w-full object-cover"
+          onError={() => setIsBroken(true)}
+        />
+      ) : (
+        <span>{initials}</span>
+      )}
+    </div>
+  )
+}
+
 
 interface CanvasWrapperProps {
   roomId: string
   onImportTemplate?: (importFn: (template: CanvasTemplate) => void) => void
   isCommentMode?: boolean
+  onCommentPlaced?: () => void
+  isAiSidebarOpen?: boolean
 }
 
 // 1. Error Boundary Component
@@ -1312,8 +1343,8 @@ function ShapePanel({ onDragStart }: ShapePanelProps) {
   }
 
   return (
-    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-surface/90 backdrop-blur-md border border-surface-border px-4 py-2 rounded-2xl shadow-2xl flex items-center gap-3 z-30 animate-in slide-in-from-bottom-5 duration-300">
-      <div className="text-[10px] font-mono text-copy-muted pr-3 border-r border-surface-border select-none uppercase tracking-wider">
+    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-surface/90 backdrop-blur-md border border-surface-border px-3 py-1.5 md:px-4 md:py-2 rounded-2xl shadow-2xl flex flex-wrap items-center justify-center gap-2 md:gap-3 z-30 animate-in slide-in-from-bottom-5 duration-300 max-w-[calc(100vw-2rem)] md:max-w-none">
+      <div className="hidden md:block text-[10px] font-mono text-copy-muted pr-3 border-r border-surface-border select-none uppercase tracking-wider">
         Shapes
       </div>
       {NODE_SHAPES.map((shape) => (
@@ -1332,7 +1363,7 @@ function ShapePanel({ onDragStart }: ShapePanelProps) {
       ))}
 
       {/* Divider */}
-      <div className="w-[1px] h-5 bg-surface-border-subtle" />
+      <div className="hidden md:block w-[1px] h-5 bg-surface-border-subtle" />
 
       {/* 3 New Drag Targets */}
       <div
@@ -1371,18 +1402,104 @@ function ShapePanel({ onDragStart }: ShapePanelProps) {
   )
 }
 
+// 3.5 Custom Collaborative Cursors Overlay
+function CustomCursors() {
+  const others = useOthers()
+  const { x: viewportX, y: viewportY, zoom } = useViewport()
+
+  // Filter cursors for other participants only (excluding current user's connections)
+  const collaborators = others.filter(
+    (other) => other.presence?.cursor !== null
+  )
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-40">
+      {collaborators.map(({ connectionId, presence, info }) => {
+        const cursor = presence?.cursor
+        if (!cursor) return null
+
+        // Convert flow/canvas coordinates to container screen pixel coordinates
+        const screenX = cursor.x * zoom + viewportX
+        const screenY = cursor.y * zoom + viewportY
+        const color = info?.color || "#a78bfa"
+        const name = info?.name || "Anonymous"
+
+        return (
+          <div
+            key={connectionId}
+            className="absolute left-0 top-0 pointer-events-none select-none transition-transform duration-75 ease-out"
+            style={{
+              transform: `translate3d(${screenX}px, ${screenY}px, 0)`,
+              willChange: "transform",
+            }}
+          >
+            {/* Colored pointer SVG */}
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="drop-shadow-lg"
+              style={{ color }}
+            >
+              <path
+                d="M5.65376 12.3825L19.5602 4.93781C20.9037 4.21853 22.4087 5.56547 21.821 6.99222L16.2759 20.4578C15.6882 21.8845 13.7381 21.8483 13.1979 20.3999L10.9822 14.4695L5.20465 11.2335C3.76451 10.4268 4.09015 8.27137 5.65376 7.95475L5.65376 12.3825Z"
+                fill="currentColor"
+                stroke="#121214"
+                strokeWidth="1.5"
+              />
+            </svg>
+            {/* Colored Name Badge */}
+            <div
+              className="absolute left-4 top-4 px-2 py-0.5 rounded-md text-[10px] font-medium text-white shadow-lg border border-white/10 whitespace-nowrap"
+              style={{ backgroundColor: color }}
+            >
+              {name}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // 4. Collaborative Canvas (inside ReactFlowProvider)
 interface CollaborativeCanvasProps {
   onImportTemplate?: (importFn: (template: CanvasTemplate) => void) => void
   isCommentMode?: boolean
+  onCommentPlaced?: () => void
+  isAiSidebarOpen?: boolean
 }
 
-function CollaborativeCanvas({ onImportTemplate, isCommentMode = false }: CollaborativeCanvasProps) {
+function CollaborativeCanvas({ onImportTemplate, isCommentMode = false, onCommentPlaced, isAiSidebarOpen = false }: CollaborativeCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const reactFlowInstance = useReactFlow()
 
   const { user } = useUser()
   const authorName = user?.fullName || user?.username || "Anonymous"
+
+  const others = useOthers()
+  const updateMyPresence = useUpdateMyPresence()
+  const currentClerkUserId = user?.id
+
+  // Filter out any connection belonging to the current user (e.g. self or other tabs of self)
+  const collaborators = others.filter((other) => other.id !== currentClerkUserId)
+
+  // Cursor move handler
+  const handleMouseMove = useCallback((event: React.MouseEvent) => {
+    if (!reactFlowWrapper.current) return
+
+    const position = reactFlowInstance.screenToFlowPosition({
+      x: event.clientX,
+      y: event.clientY,
+    })
+    updateMyPresence({ cursor: position })
+  }, [reactFlowInstance, updateMyPresence])
+
+  const handleMouseLeave = useCallback(() => {
+    updateMyPresence({ cursor: null })
+  }, [updateMyPresence])
 
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } = useLiveblocksFlow<CanvasNode, CanvasEdge>({
     suspense: true,
@@ -2017,7 +2134,10 @@ function CollaborativeCanvas({ onImportTemplate, isCommentMode = false }: Collab
         item: newCommentNode,
       } as unknown as NodeChange<CanvasNode>
     ])
-  }, [isCommentMode, reactFlowInstance, onNodesChange, authorName])
+
+    // Turn off comment mode after successfully dropping a comment box
+    onCommentPlaced?.()
+  }, [isCommentMode, reactFlowInstance, onNodesChange, authorName, onCommentPlaced])
 
   return (
     <CanvasActionsContext.Provider value={{ deleteNode, duplicateNode, deleteEdge, updateEdgeData, updateNodeData }}>
@@ -2043,6 +2163,8 @@ function CollaborativeCanvas({ onImportTemplate, isCommentMode = false }: Collab
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
           onPaneClick={onPaneClick}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
           defaultEdgeOptions={{
             type: "customCanvasEdge",
             markerEnd: {
@@ -2065,12 +2187,12 @@ function CollaborativeCanvas({ onImportTemplate, isCommentMode = false }: Collab
           />
           <MiniMap
             position="bottom-left"
-            className="!bg-surface !border !border-surface-border rounded-xl overflow-hidden shadow-lg"
+            className="!bg-surface !border !border-surface-border rounded-xl overflow-hidden shadow-lg hidden lg:block"
             maskColor="rgba(8, 8, 9, 0.7)"
             nodeColor="#1a1a20"
             nodeStrokeWidth={0}
           />
-          <Cursors />
+          <CustomCursors />
         </ReactFlow>
 
         {/* Floating Context Menu */}
@@ -2097,6 +2219,53 @@ function CollaborativeCanvas({ onImportTemplate, isCommentMode = false }: Collab
             hasClipboardItems={!!clipboard && clipboard.length > 0}
           />
         )}
+
+        {/* Floating Presence Avatar Group */}
+        <div 
+          className={cn(
+            "absolute top-4 transition-all duration-300 ease-in-out z-20 flex items-center gap-2 bg-surface/90 backdrop-blur-md border border-surface-border p-1.5 rounded-xl shadow-2xl",
+            isAiSidebarOpen ? "right-[21rem]" : "right-4"
+          )}
+        >
+          {/* Collaborators Stack */}
+          {collaborators.length > 0 && (
+            <div className="flex items-center -space-x-2 pr-1 select-none">
+              {collaborators.slice(0, 5).map(({ connectionId, info }) => {
+                const name = info?.name || "Collaborator"
+                const avatar = info?.avatar
+                const initials = getInitials(name)
+
+                return (
+                  <CanvasAvatar
+                    key={connectionId}
+                    name={name}
+                    avatar={avatar}
+                    initials={initials}
+                  />
+                )
+              })}              
+              {/* Overflow Chip */}
+              {collaborators.length > 5 && (
+                <div 
+                  className="h-8 w-8 rounded-full border-2 border-surface bg-subtle flex items-center justify-center text-[10px] font-bold text-brand shadow-inner animate-in zoom-in duration-200"
+                  title={`${collaborators.length - 5} more collaborators`}
+                >
+                  +{collaborators.length - 5}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Divider - only when collaborators exist */}
+          {collaborators.length > 0 && (
+            <div className="w-px h-5 bg-surface-border-subtle" />
+          )}
+
+          {/* Current User Button */}
+          <div className="flex items-center justify-center h-8 w-8 overflow-hidden rounded-full bg-subtle">
+            <UserButton appearance={clerkAppearance} />
+          </div>
+        </div>
 
         {/* Floating Pill Toolbar */}
         <ShapePanel onDragStart={handleDragStart} />
@@ -2148,7 +2317,7 @@ function CanvasErrorState({ onReset }: { onReset: () => void }) {
 }
 
 // 7. Canvas Root Component
-export function Canvas({ roomId, onImportTemplate, isCommentMode = false }: CanvasWrapperProps) {
+export function Canvas({ roomId, onImportTemplate, isCommentMode = false, onCommentPlaced, isAiSidebarOpen = false }: CanvasWrapperProps) {
   const [errorKey, setErrorKey] = useState(0)
 
   const handleReset = () => {
@@ -2161,11 +2330,11 @@ export function Canvas({ roomId, onImportTemplate, isCommentMode = false }: Canv
         <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
           <RoomProvider 
             id={roomId} 
-            initialPresence={{ cursor: null, isThinking: false }}
+            initialPresence={{ cursor: null, thinking: false }}
           >
             <ClientSideSuspense fallback={<CanvasLoadingState />}>
               <ReactFlowProvider>
-                <CollaborativeCanvas onImportTemplate={onImportTemplate} isCommentMode={isCommentMode} />
+                <CollaborativeCanvas onImportTemplate={onImportTemplate} isCommentMode={isCommentMode} onCommentPlaced={onCommentPlaced} isAiSidebarOpen={isAiSidebarOpen} />
               </ReactFlowProvider>
             </ClientSideSuspense>
           </RoomProvider>

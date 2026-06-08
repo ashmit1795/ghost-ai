@@ -9,7 +9,7 @@ Define:
 ### Presence
 
 - cursor position
-- `isThinking` boolean
+- `thinking` boolean
 
 ### UserMeta
 

@@ -127,12 +127,16 @@ export function EditorNavbar({
             </Button>
           </>
         )}
-        <div className="w-[1px] h-4 bg-surface-border-subtle mx-1" />
-        <div className="flex items-center justify-end w-9">
-          <UserButton
-            appearance={clerkAppearance}
-          />
-        </div>
+        {!activeProject && (
+          <>
+            <div className="w-[1px] h-4 bg-surface-border-subtle mx-1" />
+            <div className="flex items-center justify-end w-9">
+              <UserButton
+                appearance={clerkAppearance}
+              />
+            </div>
+          </>
+        )}
       </div>
     </header>
   )
