@@ -25,6 +25,16 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Clear timeout on unmount or when handleSend is reconstructed
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
 
   // Auto-resize textarea between 40px and 120px
   const adjustHeight = useCallback(() => {
@@ -55,7 +65,12 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
     setInputValue("")
     setIsGenerating(true)
 
-    setTimeout(() => {
+    // Clear any previous scheduled timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+
+    timeoutRef.current = setTimeout(() => {
       setMessages((prev) => [
         ...prev,
         {

@@ -29,6 +29,34 @@ function getInitials(name?: string) {
   return name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
 }
 
+interface CanvasAvatarProps {
+  name: string
+  avatar?: string
+  initials: string
+}
+
+function CanvasAvatar({ name, avatar, initials }: CanvasAvatarProps) {
+  const [isBroken, setIsBroken] = useState(false)
+
+  return (
+    <div
+      className="relative group h-8 w-8 rounded-full border-2 border-surface bg-subtle overflow-hidden flex items-center justify-center text-[10px] font-semibold text-copy-primary shadow-inner"
+      title={name}
+    >
+      {avatar && !isBroken ? (
+        <img
+          src={avatar}
+          alt={name}
+          className="h-full w-full object-cover"
+          onError={() => setIsBroken(true)}
+        />
+      ) : (
+        <span>{initials}</span>
+      )}
+    </div>
+  )
+}
+
 
 interface CanvasWrapperProps {
   roomId: string
@@ -1377,13 +1405,11 @@ function ShapePanel({ onDragStart }: ShapePanelProps) {
 // 3.5 Custom Collaborative Cursors Overlay
 function CustomCursors() {
   const others = useOthers()
-  const { user } = useUser()
-  const currentClerkUserId = user?.id
   const { x: viewportX, y: viewportY, zoom } = useViewport()
 
   // Filter cursors for other participants only (excluding current user's connections)
   const collaborators = others.filter(
-    (other) => other.id !== currentClerkUserId && other.presence?.cursor !== null
+    (other) => other.presence?.cursor !== null
   )
 
   return (
@@ -2210,24 +2236,14 @@ function CollaborativeCanvas({ onImportTemplate, isCommentMode = false, onCommen
                 const initials = getInitials(name)
 
                 return (
-                  <div
+                  <CanvasAvatar
                     key={connectionId}
-                    className="relative group h-8 w-8 rounded-full border-2 border-surface bg-subtle overflow-hidden flex items-center justify-center text-[10px] font-semibold text-copy-primary shadow-inner"
-                    title={name}
-                  >
-                    {avatar ? (
-                      <img 
-                        src={avatar} 
-                        alt={name} 
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span>{initials}</span>
-                    )}
-                  </div>
+                    name={name}
+                    avatar={avatar}
+                    initials={initials}
+                  />
                 )
-              })}
-              
+              })}              
               {/* Overflow Chip */}
               {collaborators.length > 5 && (
                 <div 
