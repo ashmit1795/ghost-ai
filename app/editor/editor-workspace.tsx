@@ -14,7 +14,7 @@ import { CanvasTemplate } from "@/components/editor/starter-templates"
 
 function EditorWorkspaceContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(true)
+  const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false)
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
   const [isCommentMode, setIsCommentMode] = useState(false)
   const { activeProject, setCreateOpen } = useProjects()
@@ -54,7 +54,7 @@ function EditorWorkspaceContent() {
         />
 
         {/* Central Canvas and Right AI Sidebar Wrapper */}
-        <div className="flex-1 flex overflow-hidden bg-base">
+        <div className="flex-1 flex relative overflow-hidden bg-base">
           {/* System Design Canvas Area */}
           <main className={cn(
             "flex-1 relative bg-base select-none overflow-hidden",
@@ -86,6 +86,8 @@ function EditorWorkspaceContent() {
                 roomId={activeProject.id}
                 onImportTemplate={handleRegisterImport}
                 isCommentMode={isCommentMode}
+                onCommentPlaced={() => setIsCommentMode(false)}
+                isAiSidebarOpen={isAiSidebarOpen}
               />
             ) : (
               /* Minimal Card-Free Editor Home Screen (when no project is open) */
@@ -112,8 +114,8 @@ function EditorWorkspaceContent() {
           {activeProject && (
             <aside
               className={cn(
-                "w-80 border-l border-surface-border bg-surface flex flex-col transition-all duration-300 ease-in-out shrink-0 select-none",
-                isAiSidebarOpen ? "translate-x-0 w-80" : "translate-x-full w-0 border-l-0 overflow-hidden"
+                "absolute right-0 top-0 bottom-0 z-20 w-80 border-l border-surface-border bg-surface flex flex-col transition-transform duration-300 ease-in-out select-none shadow-2xl",
+                isAiSidebarOpen ? "translate-x-0" : "translate-x-full"
               )}
             >
               <div className="h-14 flex items-center justify-between px-4 border-b border-surface-border shrink-0">

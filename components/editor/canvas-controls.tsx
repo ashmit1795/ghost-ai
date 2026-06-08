@@ -17,7 +17,7 @@ export function CanvasControls() {
   const zoomPercentage = Math.round(zoom * 100)
   
   return (
-    <div className="absolute bottom-6 right-6 z-50 flex items-center gap-2 bg-surface/90 backdrop-blur-md border border-surface-border p-1.5 rounded-xl shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200">
+    <div className="absolute bottom-[5.5rem] right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 bg-surface/90 backdrop-blur-md border border-surface-border p-1.5 rounded-xl shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200">
       {/* Collaborative History Group */}
       <div className="flex items-center gap-0.5">
         <button

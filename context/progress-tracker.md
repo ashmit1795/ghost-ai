@@ -30,6 +30,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Canvas Ergonomics (Feature 15: keyboard shortcuts hook for canvas zoom and Liveblocks collaborative history actions, input focus isolation, and float controls overlay integration)
 - `[x]` Starter Template Library (Feature 16: `CanvasTemplate` type, 8 pre-built templates across architecture/devops/flowchart/org-chart/mind-map categories, lightweight SVG mini-preview modal with category badges, navbar `LayoutTemplate` button, and canvas `importTemplate` action that clears and replaces canvas content then fits the view)
 - `[x]` Canvas Enrichment (Feature 17: Sticky Notes, Text Blocks, and Icon Nodes with category-based popover picker, canvas context menu, connection-drop-to-create node spawning, navbar comment mode, and 2 new templates)
+- `[x]` UI/UX Polish Fixes (Closed-by-default floating AI sidebar, responsive overlays preventing controls/minimap collisions, and one-shot auto-disabling comment mode)
+- `[x]` Collaborative Presence (Feature 18: Live cursors overlay tracking other participants relative to zoom/pan transforms, and floating avatars stack + Clerk UserButton group in canvas)
 
 ## In Progress
 
