@@ -25,7 +25,7 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Clear timeout on unmount or when handleSend is reconstructed
   useEffect(() => {
@@ -102,8 +102,10 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
         "absolute right-0 top-0 bottom-0 z-40 w-80 border-l border-surface-border bg-base/95 backdrop-blur-md",
         "flex flex-col overflow-hidden",
         "transition-transform duration-300 ease-in-out select-none shadow-2xl",
-        isOpen ? "translate-x-0" : "translate-x-full"
+        isOpen ? "translate-x-0" : "translate-x-full pointer-events-none invisible"
       )}
+      aria-hidden={!isOpen}
+      inert={!isOpen ? true : undefined}
     >
       {/* ── Header ─────────────────────────────────── */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-surface-border shrink-0">
