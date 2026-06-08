@@ -32,6 +32,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Canvas Enrichment (Feature 17: Sticky Notes, Text Blocks, and Icon Nodes with category-based popover picker, canvas context menu, connection-drop-to-create node spawning, navbar comment mode, and 2 new templates)
 - `[x]` UI/UX Polish Fixes (Closed-by-default floating AI sidebar, responsive overlays preventing controls/minimap collisions, and one-shot auto-disabling comment mode)
 - `[x]` Collaborative Presence (Feature 18: Live cursors overlay tracking other participants relative to zoom/pan transforms, and floating avatars stack + Clerk UserButton group in canvas)
+- `[x]` AI Sidebar Shell (Feature 19: Dedicated floating overlay panel with AI Architect chat and Specs markdown generator card preview)
 
 ## In Progress
 
