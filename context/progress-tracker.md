@@ -34,6 +34,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Collaborative Presence (Feature 18: Live cursors overlay tracking other participants relative to zoom/pan transforms, and floating avatars stack + Clerk UserButton group in canvas)
 - `[x]` AI Sidebar Shell (Feature 19: Dedicated floating overlay panel with AI Architect chat and Specs markdown generator card preview)
 - `[x]` Canvas Autosave (Feature 20: Persistent storage of collaborative canvas state to Vercel Blob and load empty-room guard)
+- `[x]` Design Agent API Setup (Feature 21: Added Prisma model TaskRun, created minimal design task trigger/design-agent.ts, created POST /api/ai/design to trigger background task, created POST /api/ai/design/token to generate scoped public read tokens)
 
 ## In Progress
 
@@ -101,5 +102,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - **Empty-Room Canvas Hydration Guard**: Designed an empty-room guard inside the collaborative canvas. On mount, if the Liveblocks room is empty (`nodes` and `edges` lengths are 0), it triggers a GET request to restore the Vercel Blob canvas snapshot into the room's Liveblocks storage using `useMutation`. A `didAttemptLoad` ref prevents double execution under React StrictMode double invocation, and the autosave hook remains disabled during the loading phase to avoid loopback saves.
 
 - **Resilient SPA Hook and Tab Exit Persistence (Autosave)**: Implemented tab-unload persistence using `beforeunload` listener with a `keepalive: true` fetch, coupled with an SPA component unmount cleanup flush. This ensures last-tick user edits are captured during both page reloads and internal client-side router transitions.
+
+- **Background Task Run Tracking & Scoped Tokens**: Implemented the `TaskRun` database tracking model to verify and protect background job runs. Real-time updates are enabled securely by generating run-scoped public access tokens (`auth.createPublicToken`) that restrict client-side token consumption only to the specific execution run and task ID.
 
 
