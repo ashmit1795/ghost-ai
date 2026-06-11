@@ -11,6 +11,11 @@ interface RouteParams {
 export async function GET(req: Request, { params }: RouteParams) {
   const { projectId } = await params
 
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error("BLOB_READ_WRITE_TOKEN is not configured in the environment")
+    return Response.json({ error: "Storage configuration error" }, { status: 500 })
+  }
+
   try {
     // 1. Verify project access (checks authentication + owner/collaborator)
     const access = await checkProjectAccess(projectId)
@@ -77,9 +82,23 @@ export async function PUT(req: Request, { params }: RouteParams) {
       return Response.json({ error: "Payload must be an object" }, { status: 400 })
     }
 
-    const payload = body as Record<string, unknown>
+    const payload = body as Record<string, any>
     if (!payload.nodes || !payload.edges) {
       return Response.json({ error: "Missing required nodes or edges lists" }, { status: 400 })
+    }
+
+    if (!Array.isArray(payload.nodes) || !Array.isArray(payload.edges)) {
+      return Response.json({ error: "nodes and edges must be arrays" }, { status: 400 })
+    }
+
+    const isValidNode = (node: any) =>
+      node && typeof node === "object" && typeof node.id === "string" && typeof node.type === "string"
+
+    const isValidEdge = (edge: any) =>
+      edge && typeof edge === "object" && typeof edge.id === "string" && typeof edge.source === "string" && typeof edge.target === "string"
+
+    if (!payload.nodes.every(isValidNode) || !payload.edges.every(isValidEdge)) {
+      return Response.json({ error: "Malformed node or edge structure" }, { status: 400 })
     }
 
     // 3. Upload JSON to Vercel Blob using private access (matches private store config)

@@ -24,6 +24,8 @@ export function useCanvasAutosave({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hasInitialized = useRef(false)
   const isDirtyRef = useRef(false)
+  const isUnloadingRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const stateRef = useRef({ nodes, edges })
   useEffect(() => {
@@ -31,6 +33,12 @@ export function useCanvasAutosave({
   }, [nodes, edges])
 
   const saveCanvas = useCallback(async (nodesToSave: CanvasNode[], edgesToSave: CanvasEdge[]) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     setSaveStatus("saving")
     try {
       const res = await fetch(`/api/projects/${projectId}/canvas`, {
@@ -39,6 +47,7 @@ export function useCanvasAutosave({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ nodes: nodesToSave, edges: edgesToSave }),
+        signal: controller.signal,
       })
 
       if (!res.ok) {
@@ -47,11 +56,20 @@ export function useCanvasAutosave({
 
       isDirtyRef.current = false
       setSaveStatus("saved")
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        // Ignored: request was aborted to prevent state updates after unmount or override
+        return
+      }
       console.error("Error autosaving canvas:", error)
       setSaveStatus("error")
     }
   }, [projectId])
+
+  const saveCanvasRef = useRef(saveCanvas)
+  useEffect(() => {
+    saveCanvasRef.current = saveCanvas
+  }, [saveCanvas])
 
   // Watch for changes to nodes and edges
   useEffect(() => {
@@ -90,25 +108,36 @@ export function useCanvasAutosave({
     }
   }, [nodes, edges, enabled, saveCanvas])
 
+  // Abort pending fetch on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
+
   // Flush pending changes on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
       }
-      if (isDirtyRef.current) {
+      if (isDirtyRef.current && !isUnloadingRef.current) {
         // Run fire-and-forget save fetch on SPA navigation/unmount
-        saveCanvas(stateRef.current.nodes, stateRef.current.edges).catch((err) => {
+        saveCanvasRef.current(stateRef.current.nodes, stateRef.current.edges).catch((err) => {
           console.error("Failed to flush canvas on hook unmount:", err)
         })
       }
     }
-  }, [saveCanvas])
+  }, [])
 
   // beforeunload handler for tab closure/page reload
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (isDirtyRef.current) {
+        isUnloadingRef.current = true
+        isDirtyRef.current = false
         const { nodes: nodesToSave, edges: edgesToSave } = stateRef.current
         fetch(`/api/projects/${projectId}/canvas`, {
           method: "PUT",

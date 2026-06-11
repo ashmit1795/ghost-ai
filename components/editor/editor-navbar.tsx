@@ -35,14 +35,11 @@ export function EditorNavbar({
 }: EditorNavbarProps) {
   const { setShareOpen } = useProjects()
   const [localStatus, setLocalStatus] = useState<SaveStatus>("idle")
-  const [prevStatus, setPrevStatus] = useState<SaveStatus>("idle")
-
-  if (saveStatus !== prevStatus) {
-    setPrevStatus(saveStatus)
-    setLocalStatus(saveStatus)
-  }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLocalStatus(saveStatus)
+
     if (saveStatus === "saved") {
       const timer = setTimeout(() => {
         setLocalStatus("idle")

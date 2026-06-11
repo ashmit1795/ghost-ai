@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { EditorNavbar } from "@/components/editor/editor-navbar"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
@@ -21,6 +21,11 @@ function EditorWorkspaceContent() {
   const [isCommentMode, setIsCommentMode] = useState(false)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
   const { activeProject, setCreateOpen } = useProjects()
+
+  // Reset save status on active workspace change
+  useEffect(() => {
+    setSaveStatus("idle")
+  }, [activeProject])
 
   // Holds the import function registered by CollaborativeCanvas
   const importTemplateFnRef = useRef<((template: CanvasTemplate) => void) | null>(null)

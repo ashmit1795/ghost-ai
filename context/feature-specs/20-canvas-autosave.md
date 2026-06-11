@@ -64,7 +64,7 @@ previous snapshot rather than accumulating blob versions.
 5. Parse the request body as JSON. Expect shape `{ nodes: [...], edges: [...] }`.
    Return `400` if malformed or missing required keys.
 6. Serialize the payload to a `Blob` / `Buffer`.
-7. Call `put(`canvas/${projectId}.json`, buffer, { access: 'public',
+7. Call `put(`canvas/${projectId}.json`, buffer, { access: 'private',
    allowOverwrite: true, contentType: 'application/json' })`.
 8. On success, `prisma.project.update` — set `canvasJsonPath` to the returned
    blob URL.
@@ -128,7 +128,7 @@ interface UseCanvasAutosaveReturn {
    active dragging, multi-node moves, or rapid edits. Reset the timer on every
    change.
 
-2. **Save function:** POST the current nodes and edges to
+2. **Save function:** PUT the current nodes and edges to
    `PUT /api/projects/${projectId}/canvas` as JSON. Set `saveStatus` to
    `'saving'` before the fetch, `'saved'` on success, `'error'` on failure.
 
@@ -161,7 +161,7 @@ After `useLiveblocksFlow` resolves (the component is already inside
 `<ClientSideSuspense>` so it is fully hydrated by the time it renders), add a
 `useEffect` that fires once on mount:
 
-```
+```text
 1. Check if nodes.length === 0 && edges.length === 0.
 2. If not empty — the Liveblocks room already has content. Skip loading.
    Set a ref `didAttemptLoad = true` and return.
@@ -211,7 +211,7 @@ the existing prop chain in `editor-workspace.tsx` → `Canvas` →
 
 ## Storage Pattern Summary
 
-```
+```text
 Browser (CollaborativeCanvas)
   │── useLiveblocksFlow ──► Liveblocks (live collaboration, real-time sync)
   │── useCanvasAutosave ──► PUT /api/projects/[id]/canvas
