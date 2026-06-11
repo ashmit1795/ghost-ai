@@ -64,7 +64,7 @@ previous snapshot rather than accumulating blob versions.
 5. Parse the request body as JSON. Expect shape `{ nodes: [...], edges: [...] }`.
    Return `400` if malformed or missing required keys.
 6. Serialize the payload to a `Blob` / `Buffer`.
-7. Call `put(`canvas/${projectId}.json`, buffer, { access: 'public',
+7. Call `put(`canvas/${projectId}.json`, buffer, { access: 'private',
    allowOverwrite: true, contentType: 'application/json' })`.
 8. On success, `prisma.project.update` — set `canvasJsonPath` to the returned
    blob URL.
