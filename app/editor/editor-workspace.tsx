@@ -12,12 +12,14 @@ import { Canvas } from "@/components/editor/canvas"
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal"
 import { CanvasTemplate } from "@/components/editor/starter-templates"
 import { AiSidebar } from "@/components/editor/ai-sidebar"
+import { SaveStatus } from "@/hooks/useCanvasAutosave"
 
 function EditorWorkspaceContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false)
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
   const [isCommentMode, setIsCommentMode] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
   const { activeProject, setCreateOpen } = useProjects()
 
   // Holds the import function registered by CollaborativeCanvas
@@ -43,6 +45,7 @@ function EditorWorkspaceContent() {
         onOpenTemplates={() => setIsTemplatesOpen(true)}
         isCommentMode={isCommentMode}
         onToggleCommentMode={() => setIsCommentMode((prev) => !prev)}
+        saveStatus={saveStatus}
       />
 
       {/* Main Workspace Frame */}
@@ -89,6 +92,7 @@ function EditorWorkspaceContent() {
                 isCommentMode={isCommentMode}
                 onCommentPlaced={() => setIsCommentMode(false)}
                 isAiSidebarOpen={isAiSidebarOpen}
+                onSaveStatusChange={setSaveStatus}
               />
             ) : (
               /* Minimal Card-Free Editor Home Screen (when no project is open) */

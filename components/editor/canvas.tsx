@@ -4,12 +4,13 @@ import React, { Component, ErrorInfo, ReactNode, useRef, useCallback, useState, 
 import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, ReactFlowProvider, useReactFlow, Handle, Position, NodeProps, NodeResizer, NodeChange, EdgeChange, NodeToolbar, MarkerType, useViewport } from "@xyflow/react"
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense, useMutation, useUndo, useRedo, useOthers, useUpdateMyPresence } from "@liveblocks/react/suspense"
 import { useLiveblocksFlow } from "@liveblocks/react-flow"
-import { LiveObject } from "@liveblocks/client"
+import { LiveObject, LiveMap } from "@liveblocks/client"
 import { AlertTriangle, Loader2, Check, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Sparkles, Plus, Grid, Type, StickyNote, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
 import { useUser, UserButton } from "@clerk/nextjs"
 import { clerkAppearance } from "@/lib/clerk-theme"
+import { useCanvasAutosave, SaveStatus } from "@/hooks/useCanvasAutosave"
 
 // Import CSS styles for React Flow and Liveblocks
 import "@xyflow/react/dist/style.css"
@@ -64,6 +65,7 @@ interface CanvasWrapperProps {
   isCommentMode?: boolean
   onCommentPlaced?: () => void
   isAiSidebarOpen?: boolean
+  onSaveStatusChange?: (status: SaveStatus) => void
 }
 
 // 1. Error Boundary Component
@@ -1466,13 +1468,22 @@ function CustomCursors() {
 
 // 4. Collaborative Canvas (inside ReactFlowProvider)
 interface CollaborativeCanvasProps {
+  projectId: string
   onImportTemplate?: (importFn: (template: CanvasTemplate) => void) => void
   isCommentMode?: boolean
   onCommentPlaced?: () => void
   isAiSidebarOpen?: boolean
+  onSaveStatusChange?: (status: SaveStatus) => void
 }
 
-function CollaborativeCanvas({ onImportTemplate, isCommentMode = false, onCommentPlaced, isAiSidebarOpen = false }: CollaborativeCanvasProps) {
+function CollaborativeCanvas({
+  projectId,
+  onImportTemplate,
+  isCommentMode = false,
+  onCommentPlaced,
+  isAiSidebarOpen = false,
+  onSaveStatusChange,
+}: CollaborativeCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const reactFlowInstance = useReactFlow()
 
@@ -1533,6 +1544,110 @@ function CollaborativeCanvas({ onImportTemplate, isCommentMode = false, onCommen
       }
     },
   })
+
+  // --- Canvas Autosave & Load Guard Implementation ---
+  const didAttemptLoad = useRef(false)
+  const [isRestoring, setIsRestoring] = useState(false)
+
+  // Collaborative mutation to restore a saved canvas snapshot into Liveblocks storage
+  const restoreCanvas = useMutation(({ storage }, restoredNodes: CanvasNode[], restoredEdges: CanvasEdge[]) => {
+    let flow = (storage as any).get("flow")
+    if (!flow) {
+      flow = new LiveObject({
+        nodes: new LiveMap(),
+        edges: new LiveMap(),
+      })
+      ;(storage as any).set("flow", flow)
+    }
+
+    const nodesMap = flow.get("nodes")
+    const edgesMap = flow.get("edges")
+
+    if (nodesMap) {
+      nodesMap.clear()
+      for (const node of restoredNodes) {
+        nodesMap.set(
+          node.id,
+          new LiveObject({
+            id: node.id,
+            type: node.type,
+            position: new LiveObject(node.position),
+            data: new LiveObject(node.data as any),
+            width: node.width,
+            height: node.height,
+            selected: node.selected,
+          } as any)
+        )
+      }
+    }
+
+    if (edgesMap) {
+      edgesMap.clear()
+      for (const edge of restoredEdges) {
+        edgesMap.set(
+          edge.id,
+          new LiveObject({
+            id: edge.id,
+            type: edge.type,
+            source: edge.source,
+            target: edge.target,
+            data: edge.data ? new LiveObject(edge.data as any) : undefined,
+            selected: edge.selected,
+            animated: edge.animated,
+          } as any)
+        )
+      }
+    }
+  }, [])
+
+  // Load guard (empty-room check)
+  useEffect(() => {
+    if (didAttemptLoad.current) return
+
+    const isEmpty = nodes.length === 0 && edges.length === 0
+    if (!isEmpty) {
+      didAttemptLoad.current = true
+      return
+    }
+
+    didAttemptLoad.current = true
+    setIsRestoring(true)
+
+    async function loadCanvas() {
+      try {
+        const res = await fetch(`/api/projects/${projectId}/canvas`)
+        if (!res.ok) throw new Error("Failed to fetch canvas")
+        const data = await res.json()
+        if (data && data.canvas) {
+          const { nodes: restoredNodes, edges: restoredEdges } = data.canvas
+          if (restoredNodes && restoredEdges) {
+            restoreCanvas(restoredNodes, restoredEdges)
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load canvas from snapshot:", err)
+      } finally {
+        setIsRestoring(false)
+      }
+    }
+
+    loadCanvas()
+  }, [projectId, nodes.length, edges.length, restoreCanvas])
+
+  // Wire autosave hook
+  const { saveStatus } = useCanvasAutosave({
+    projectId,
+    nodes,
+    edges,
+    enabled: !isRestoring && didAttemptLoad.current,
+  })
+
+  // Notify parent component of saveStatus changes
+  useEffect(() => {
+    if (onSaveStatusChange) {
+      onSaveStatusChange(saveStatus)
+    }
+  }, [saveStatus, onSaveStatusChange])
 
   const undo = useUndo()
   const redo = useRedo()
@@ -2317,7 +2432,7 @@ function CanvasErrorState({ onReset }: { onReset: () => void }) {
 }
 
 // 7. Canvas Root Component
-export function Canvas({ roomId, onImportTemplate, isCommentMode = false, onCommentPlaced, isAiSidebarOpen = false }: CanvasWrapperProps) {
+export function Canvas({ roomId, onImportTemplate, isCommentMode = false, onCommentPlaced, isAiSidebarOpen = false, onSaveStatusChange }: CanvasWrapperProps) {
   const [errorKey, setErrorKey] = useState(0)
 
   const handleReset = () => {
@@ -2334,7 +2449,14 @@ export function Canvas({ roomId, onImportTemplate, isCommentMode = false, onComm
           >
             <ClientSideSuspense fallback={<CanvasLoadingState />}>
               <ReactFlowProvider>
-                <CollaborativeCanvas onImportTemplate={onImportTemplate} isCommentMode={isCommentMode} onCommentPlaced={onCommentPlaced} isAiSidebarOpen={isAiSidebarOpen} />
+                <CollaborativeCanvas
+                  projectId={roomId}
+                  onImportTemplate={onImportTemplate}
+                  isCommentMode={isCommentMode}
+                  onCommentPlaced={onCommentPlaced}
+                  isAiSidebarOpen={isAiSidebarOpen}
+                  onSaveStatusChange={onSaveStatusChange}
+                />
               </ReactFlowProvider>
             </ClientSideSuspense>
           </RoomProvider>

@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Phase 2: Collaborative Editor (Base Chrome)
+- Phase 3: AI Orchestration & Generation
 
 ## Current Goal
 
-- Implement persistence layer (database canvas snapshots via Vercel Blob).
+- Implement natural language prompt-to-graph AI generation and specification builder.
 
 ## Completed
 
@@ -33,6 +33,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` UI/UX Polish Fixes (Closed-by-default floating AI sidebar, responsive overlays preventing controls/minimap collisions, and one-shot auto-disabling comment mode)
 - `[x]` Collaborative Presence (Feature 18: Live cursors overlay tracking other participants relative to zoom/pan transforms, and floating avatars stack + Clerk UserButton group in canvas)
 - `[x]` AI Sidebar Shell (Feature 19: Dedicated floating overlay panel with AI Architect chat and Specs markdown generator card preview)
+- `[x]` Canvas Autosave (Feature 20: Persistent storage of collaborative canvas state to Vercel Blob and load empty-room guard)
 
 ## In Progress
 
@@ -40,7 +41,8 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Persistence Layer (Database Canvas Snapshots via Vercel Blob)
+- AI Architecture Generation (natural language prompt to canvas nodes and edges, background worker tasks)
+- Technical Spec Generation (convert final graph to persistent Markdown document)
 
 ## Open Questions
 
@@ -91,5 +93,13 @@ Update this file whenever the current phase, active feature, or implementation s
 - **Stateless Auth Latency Speedup via Clerk JWT Session Claims**: Refactored the `/api/liveblocks-auth` route to read user profile fields (`email`, `firstName`, `lastName`, `imageUrl`) directly from Clerk's `sessionClaims` JWT payload instead of calling the slow `currentUser()` API. This runs as a completely local JWT decryption taking `< 1ms` with no Clerk network calls. We also cache verified rooms in memory (`verifiedRooms`) to skip redundant `liveblocks.getOrCreateRoom()` calls, and pre-create the Liveblocks room in `POST /api/projects` to make connection times instantaneous (<10ms).
 
 - **In-Memory Clipboard & Cursor-Relative Paste Positioning**: Added support for complete clipboard operations (`Ctrl+C`, `Ctrl+V`, `Ctrl+X`, `Ctrl+D`, `Delete`, `Backspace`) for canvas nodes. To ensure a premium UX, the paste operation tracks mouse movement to center the pasted elements directly under the user's cursor on the canvas, falling back to the viewport center. Preserves relative node spacing during multi-node paste, and isolates keyboard event triggers from active text inputs to avoid interference.
+
+- **Vercel Blob Path Convention for Canvas Snapshots**: Standardized path naming as `canvas/${projectId}.json` using `allowOverwrite: true` to avoid accumulating multiple versioned blob objects per project and minimize Vercel storage usage.
+
+- **Collaborator Write Access on Canvas Snapshots**: Configured the canvas snapshot PUT API route to permit writes from both the workspace owner and any authenticated collaborator, as the design canvas is a multi-user workspace.
+
+- **Empty-Room Canvas Hydration Guard**: Designed an empty-room guard inside the collaborative canvas. On mount, if the Liveblocks room is empty (`nodes` and `edges` lengths are 0), it triggers a GET request to restore the Vercel Blob canvas snapshot into the room's Liveblocks storage using `useMutation`. A `didAttemptLoad` ref prevents double execution under React StrictMode double invocation, and the autosave hook remains disabled during the loading phase to avoid loopback saves.
+
+- **Resilient SPA Hook and Tab Exit Persistence (Autosave)**: Implemented tab-unload persistence using `beforeunload` listener with a `keepalive: true` fetch, coupled with an SPA component unmount cleanup flush. This ensures last-tick user edits are captured during both page reloads and internal client-side router transitions.
 
 

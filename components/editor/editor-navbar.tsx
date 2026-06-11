@@ -1,12 +1,14 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { PanelLeftClose, PanelLeftOpen, Share2, Sparkles, LayoutTemplate, MessageSquare } from "lucide-react"
+import { PanelLeftClose, PanelLeftOpen, Share2, Sparkles, LayoutTemplate, MessageSquare, Loader2, Check, AlertTriangle } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import { clerkAppearance } from "@/lib/clerk-theme"
 import { Project } from "@/hooks/use-project-actions"
 import { cn } from "@/lib/utils"
 import { useProjects } from "@/contexts/project-context"
+import { SaveStatus } from "@/hooks/useCanvasAutosave"
 
 interface EditorNavbarProps {
   isSidebarOpen: boolean;
@@ -17,6 +19,7 @@ interface EditorNavbarProps {
   onOpenTemplates?: () => void;
   isCommentMode?: boolean;
   onToggleCommentMode?: () => void;
+  saveStatus?: SaveStatus;
 }
 
 export function EditorNavbar({
@@ -28,8 +31,25 @@ export function EditorNavbar({
   onOpenTemplates,
   isCommentMode = false,
   onToggleCommentMode,
+  saveStatus = "idle",
 }: EditorNavbarProps) {
   const { setShareOpen } = useProjects()
+  const [localStatus, setLocalStatus] = useState<SaveStatus>("idle")
+  const [prevStatus, setPrevStatus] = useState<SaveStatus>("idle")
+
+  if (saveStatus !== prevStatus) {
+    setPrevStatus(saveStatus)
+    setLocalStatus(saveStatus)
+  }
+
+  useEffect(() => {
+    if (saveStatus === "saved") {
+      const timer = setTimeout(() => {
+        setLocalStatus("idle")
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [saveStatus])
   return (
     <header className="h-14 flex items-center justify-between px-4 bg-surface border-b border-surface-border text-copy-primary select-none z-20 shrink-0">
       {/* Left section: Sidebar toggle button */}
@@ -99,6 +119,30 @@ export function EditorNavbar({
             >
               <MessageSquare className="h-4 w-4" />
             </Button>
+
+            {/* Save Status Indicator */}
+            {localStatus !== "idle" && (
+              <div className="flex items-center gap-1.5 px-2 animate-in fade-in duration-300">
+                {localStatus === "saving" && (
+                  <>
+                    <Loader2 className="h-3 w-3 text-copy-muted animate-spin" />
+                    <span className="text-[10px] font-medium text-copy-muted">Saving…</span>
+                  </>
+                )}
+                {localStatus === "saved" && (
+                  <>
+                    <Check className="h-3 w-3 text-brand" />
+                    <span className="text-[10px] font-medium text-copy-muted">Saved</span>
+                  </>
+                )}
+                {localStatus === "error" && (
+                  <>
+                    <AlertTriangle className="h-3 w-3 text-error animate-pulse" />
+                    <span className="text-[10px] font-medium text-error">Save failed</span>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Share Button */}
             <Button
