@@ -36,6 +36,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` Canvas Autosave (Feature 20: Persistent storage of collaborative canvas state to Vercel Blob and load empty-room guard)
 - `[x]` Design Agent API Setup (Feature 21: Added Prisma model TaskRun, created minimal design task trigger/design-agent.ts, created POST /api/ai/design to trigger background task, created POST /api/ai/design/token to generate scoped public read tokens)
 - `[x]` Design Agent Logic (Feature 22: Added full AI design agent backend execution using Gemini 2.5 and Liveblocks room storage mutations; animated cursor and thinking status presence broadcasts; integrated realtime useRealtimeRun hooks in the AI sidebar to stream progress status and explanation logs)
+- `[x]` System Improvement & Design Agent Overhaul (Overhauled `trigger/design-agent.ts` with gemini-2.5-pro, system/prompt split, few-shot examples, minimum actions rules, validation, sequential animation, cursor centroid tracking; added generation cancel route /api/ai/design/cancel, sessionStorage persistence; fixed storage type safety; split canvas.tsx into 7 sub-components)
+
 
 ## In Progress
 

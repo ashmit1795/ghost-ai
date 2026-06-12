@@ -49,6 +49,8 @@ export async function POST(req: Request) {
     const run = await tasks.trigger("design-agent", {
       prompt,
       roomId,
+      projectName: access.project.name,
+      projectDescription: access.project.description ?? "",
     });
 
     // 3. Store the TaskRun record in the database for tracking

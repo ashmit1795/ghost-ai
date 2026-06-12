@@ -18,6 +18,8 @@ if (process.env.GOOGLE_AI_API_KEY && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) 
 export interface DesignAgentPayload {
   prompt: string;
   roomId: string;
+  projectName?: string;
+  projectDescription?: string;
 }
 
 // Structured schema for AI architect recommendations
@@ -52,7 +54,7 @@ const DesignAgentOutputSchema = z.object({
   explanation: z.string().describe("A brief explanation of the changes made and the design decisions."),
 });
 
-// Help helper to update AI agent presence
+// Helper to update AI agent presence
 async function setAiPresence(
   roomId: string,
   presence: { x: number; y: number } | null,
@@ -88,8 +90,8 @@ async function setAiPresence(
 export const designAgentTask = task({
   id: "design-agent",
   run: async (payload: DesignAgentPayload) => {
-    const { prompt, roomId } = payload;
-    logger.log("Design agent task run started", { prompt, roomId });
+    const { prompt, roomId, projectName, projectDescription } = payload;
+    logger.log("Design agent task run started", { prompt, roomId, projectName, projectDescription });
 
     // Step 1: Initialize metadata and presence
     metadata.set("progressMessage", "Initializing AI Architect...");
@@ -202,22 +204,48 @@ Layout and Spacing Rules:
   - Vertically: add 150px-200px to Y coordinates.
 - If the canvas already contains nodes, check their positions and add new nodes adjacent to them. Do not overlap existing nodes!
 
-Input:
-1. Current Canvas State:
-Nodes: ${JSON.stringify(currentNodes)}
-Edges: ${JSON.stringify(currentEdges)}
+MANDATORY GENERATION RULES:
+- You MUST generate at least 5 actions for any non-trivial architecture request.
+- For pipeline/workflow prompts (CI/CD, data pipeline, event flow): generate at least 6 nodes + 5 edges = 11 actions minimum.
+- For database/storage prompts: at least 4 nodes + 3 edges.
+- NEVER return just 1 node for any prompt that describes a system, pipeline, or workflow.
+- If unsure, generate MORE nodes rather than fewer. A richer diagram is always better.
 
-2. User Prompt:
-"${prompt}"
+EXAMPLE — If the user asks: "Design a simple REST API backend":
+You MUST return at minimum 5-8 actions like:
+{
+  "actions": [
+    { "type": "add_node", "id": "client_1", "nodeType": "iconNode", "position": {"x": 50, "y": 200}, "data": { "label": "Web Browser", "iconId": "client-browser", "color": "blue" } },
+    { "type": "add_node", "id": "api_gateway_1", "nodeType": "iconNode", "position": {"x": 300, "y": 200}, "data": { "label": "REST API Gateway", "iconId": "api-rest", "color": "green" } },
+    { "type": "add_node", "id": "app_server_1", "nodeType": "canvasNode", "position": {"x": 550, "y": 200}, "data": { "label": "App Server", "color": "neutral", "shape": "rectangle" }, "width": 150, "height": 80 },
+    { "type": "add_node", "id": "db_1", "nodeType": "iconNode", "position": {"x": 800, "y": 200}, "data": { "label": "PostgreSQL DB", "iconId": "db-postgresql", "color": "teal" } },
+    { "type": "add_edge", "id": "e_client_api", "source": "client_1", "target": "api_gateway_1", "data": { "label": "HTTP Request", "directed": true }, "animated": true },
+    { "type": "add_edge", "id": "e_api_server", "source": "api_gateway_1", "target": "app_server_1", "data": { "label": "Route", "directed": true }, "animated": false },
+    { "type": "add_edge", "id": "e_server_db", "source": "app_server_1", "target": "db_1", "data": { "label": "Query", "directed": true }, "animated": false }
+  ],
+  "explanation": "Created a 3-tier REST API backend: Browser → API Gateway → App Server → PostgreSQL DB with animated request flow."
+}`;
 
-Goal:
-Interpret the user's intent and generate the minimal set of actions (add_node, update_node, delete_node, add_edge, delete_edge) to implement the request. Also provide a concise, user-friendly explanation explaining what you added/changed and your layout reasoning. Make sure your references (source/target for edges) are valid and match the node IDs.`;
+      const userPromptBlock = `
+Project Context:
+- Project Name: "${projectName || "Unnamed Project"}"
+- Project Description: "${projectDescription || "No description provided"}"
 
-      const geminiModel = google("gemini-2.5-flash");
+Current Canvas State:
+- Existing Nodes (${currentNodes.length}): ${currentNodes.length === 0 ? "Empty canvas" : JSON.stringify(currentNodes.map(n => ({ id: n.id, type: n.type, label: (n.data as any)?.label, position: n.position })))}
+- Existing Edges (${currentEdges.length}): ${currentEdges.length === 0 ? "No edges" : JSON.stringify(currentEdges.map(e => ({ id: e.id, source: e.source, target: e.target })))}
+
+User Request: "${prompt}"
+
+Remember: Generate a complete, professional, multi-node diagram. Minimum 5 actions for any architecture request.
+`;
+
+      const geminiModel = google("gemini-2.5-pro");
       const { object } = await generateObject({
         model: geminiModel,
         schema: DesignAgentOutputSchema,
-        prompt: systemInstruction,
+        system: systemInstruction,
+        prompt: userPromptBlock,
       });
 
       logger.log("Gemini mutations planned successfully", {
@@ -225,134 +253,217 @@ Interpret the user's intent and generate the minimal set of actions (add_node, u
         explanation: object.explanation,
       });
 
-      // Step 4: Mutate Liveblocks storage based on planned actions
-      metadata.set("progressMessage", "Engaging Liveblocks canvas storage...");
-      await setAiPresence(roomId, { x: 350, y: 280 }, true);
+      // Build effective node ID set (existing + to-be-added)
+      const existingNodeIds = new Set(currentNodes.map(n => n.id));
+      const actionNodeIds = new Set(
+        object.actions
+          .filter(a => a.type === "add_node")
+          .map(a => a.id)
+      );
+      const allNodeIds = new Set([...existingNodeIds, ...actionNodeIds]);
 
-      await liveblocks.mutateStorage(roomId, ({ root }) => {
-        const rootAny = root as any;
-        let flow = rootAny.get("flow");
-        if (!flow) {
-          flow = new LiveObject({
-            nodes: new LiveMap(),
-            edges: new LiveMap(),
-          });
-          rootAny.set("flow", flow);
+      // Filter out edges with invalid source/target node references
+      const validatedActions = object.actions.filter(action => {
+        if (action.type === "add_edge") {
+          const hasSource = allNodeIds.has(action.source || "");
+          const hasTarget = allNodeIds.has(action.target || "");
+          if (!hasSource || !hasTarget) {
+            logger.warn("Dropping edge with invalid node reference", {
+              edgeId: action.id,
+              source: action.source,
+              target: action.target,
+              reason: !hasSource ? "source node missing" : "target node missing",
+            });
+            return false;
+          }
+        }
+        return true;
+      });
+
+      // Cap maximum actions to prevent runaway mutations
+      const MAX_ACTIONS = 60;
+      if (validatedActions.length > MAX_ACTIONS) {
+        logger.warn(`Action count ${validatedActions.length} exceeds cap. Truncating to ${MAX_ACTIONS}.`);
+        validatedActions.splice(MAX_ACTIONS);
+      }
+
+      // Separate actions by type for progressive mutations
+      const nodeActions = validatedActions.filter(
+        a => a.type === "add_node" || a.type === "update_node" || a.type === "delete_node"
+      );
+      const edgeActions = validatedActions.filter(
+        a => a.type === "add_edge" || a.type === "delete_edge"
+      );
+
+      // PHASE 1: Apply all node additions/modifications first
+      if (nodeActions.length > 0) {
+        metadata.set("progressMessage", `Adding/Updating ${nodeActions.length} nodes...`);
+
+        // Track AI cursor to the first new node's actual position
+        const firstNewNode = nodeActions.find(a => a.type === "add_node" && a.position);
+        if (firstNewNode && firstNewNode.position) {
+          await setAiPresence(roomId, firstNewNode.position, true);
         }
 
-        const nodesMap = flow.get("nodes");
-        const edgesMap = flow.get("edges");
+        await liveblocks.mutateStorage(roomId, ({ root }) => {
+          const rootAny = root as any;
+          let flow = rootAny.get("flow");
+          if (!flow) {
+            flow = new LiveObject({
+              nodes: new LiveMap(),
+              edges: new LiveMap(),
+            });
+            rootAny.set("flow", flow);
+          }
 
-        if (!nodesMap || !edgesMap) {
-          throw new Error("Canvas nodes or edges storage maps are missing.");
-        }
+          const nodesMap = flow.get("nodes");
+          const edgesMap = flow.get("edges");
 
-        for (const action of object.actions) {
-          const act = action as any;
-          switch (act.type) {
-            case "add_node": {
-              const defaultWidth =
-                act.nodeType === "canvasNode"
-                  ? 150
-                  : act.nodeType === "stickyNote"
-                  ? 180
-                  : act.nodeType === "textBlock"
-                  ? 200
-                  : 100;
-              const defaultHeight =
-                act.nodeType === "canvasNode"
-                  ? 80
-                  : act.nodeType === "stickyNote"
-                  ? 120
-                  : act.nodeType === "textBlock"
-                  ? 60
-                  : 100;
+          for (const act of nodeActions) {
+            switch (act.type) {
+              case "add_node": {
+                const defaultWidth =
+                  act.nodeType === "canvasNode"
+                    ? 150
+                    : act.nodeType === "stickyNote"
+                    ? 180
+                    : act.nodeType === "textBlock"
+                    ? 200
+                    : 100;
+                const defaultHeight =
+                  act.nodeType === "canvasNode"
+                    ? 80
+                    : act.nodeType === "stickyNote"
+                    ? 120
+                    : act.nodeType === "textBlock"
+                    ? 60
+                    : 100;
 
-              const nodeObj = new LiveObject({
-                id: act.id,
-                type: act.nodeType,
-                position: new LiveObject(act.position),
-                data: new LiveObject({
-                  label: act.data?.label || "",
-                  color: act.data?.color || "neutral",
-                  shape: act.data?.shape,
-                  fontSize: act.data?.fontSize,
-                  textAlign: act.data?.textAlign,
-                  bold: act.data?.bold,
-                  italic: act.data?.italic,
-                  iconId: act.data?.iconId,
-                } as any),
-                width: act.width ?? defaultWidth,
-                height: act.height ?? defaultHeight,
-                selected: false,
-              } as any);
+                const nodeObj = new LiveObject({
+                  id: act.id,
+                  type: act.nodeType,
+                  position: new LiveObject(act.position),
+                  data: new LiveObject({
+                    label: act.data?.label || "",
+                    color: act.data?.color || "neutral",
+                    shape: act.data?.shape,
+                    fontSize: act.data?.fontSize,
+                    textAlign: act.data?.textAlign,
+                    bold: act.data?.bold,
+                    italic: act.data?.italic,
+                    iconId: act.data?.iconId,
+                  } as any),
+                  width: act.width ?? defaultWidth,
+                  height: act.height ?? defaultHeight,
+                  selected: false,
+                } as any);
 
-              nodesMap.set(act.id, nodeObj);
-              break;
-            }
-            case "update_node": {
-              const nodeObj = nodesMap.get(act.id) as any;
-              if (nodeObj) {
-                if (act.position) {
-                  const posObj = nodeObj.get("position") as any;
-                  if (posObj) {
-                    if (act.position.x !== undefined) posObj.set("x", act.position.x);
-                    if (act.position.y !== undefined) posObj.set("y", act.position.y);
-                  } else {
-                    nodeObj.set("position", new LiveObject(act.position));
+                nodesMap.set(act.id, nodeObj);
+                break;
+              }
+              case "update_node": {
+                const nodeObj = nodesMap.get(act.id) as any;
+                if (nodeObj) {
+                  if (act.position) {
+                    const posObj = nodeObj.get("position") as any;
+                    if (posObj) {
+                      if (act.position.x !== undefined) posObj.set("x", act.position.x);
+                      if (act.position.y !== undefined) posObj.set("y", act.position.y);
+                    } else {
+                      nodeObj.set("position", new LiveObject(act.position));
+                    }
                   }
-                }
-                if (act.data) {
-                  const dataObj = nodeObj.get("data") as any;
-                  if (dataObj) {
-                    for (const [k, v] of Object.entries(act.data)) {
-                      if (v !== undefined) {
-                        dataObj.set(k, v);
+                  if (act.data) {
+                    const dataObj = nodeObj.get("data") as any;
+                    if (dataObj) {
+                      for (const [k, v] of Object.entries(act.data)) {
+                        if (v !== undefined) {
+                          dataObj.set(k, v);
+                        }
                       }
                     }
                   }
+                  if (act.width !== undefined) nodeObj.set("width", act.width);
+                  if (act.height !== undefined) nodeObj.set("height", act.height);
                 }
-                if (act.width !== undefined) nodeObj.set("width", act.width);
-                if (act.height !== undefined) nodeObj.set("height", act.height);
+                break;
               }
-              break;
-            }
-            case "delete_node": {
-              nodesMap.delete(act.id);
-              // Clean up dangling edges source/target references
-              for (const [edgeId, edgeObj] of edgesMap.entries()) {
-                const eObj = edgeObj as any;
-                if (eObj.get("source") === act.id || eObj.get("target") === act.id) {
-                  edgesMap.delete(edgeId);
+              case "delete_node": {
+                nodesMap.delete(act.id);
+                // Clean up dangling edges source/target references
+                for (const [edgeId, edgeObj] of edgesMap.entries()) {
+                  const eObj = edgeObj as any;
+                  if (eObj.get("source") === act.id || eObj.get("target") === act.id) {
+                    edgesMap.delete(edgeId);
+                  }
                 }
+                break;
               }
-              break;
-            }
-            case "add_edge": {
-              const edgeObj = new LiveObject({
-                id: act.id,
-                type: "customCanvasEdge",
-                source: act.source,
-                target: act.target,
-                data: new LiveObject({
-                  label: act.data?.label || "",
-                  directed: act.data?.directed !== false,
-                  controlX: null,
-                  controlY: null,
-                } as any),
-                selected: false,
-                animated: act.animated ?? false,
-              } as any);
-              edgesMap.set(act.id, edgeObj);
-              break;
-            }
-            case "delete_edge": {
-              edgesMap.delete(act.id);
-              break;
             }
           }
+        });
+      }
+
+      // Small pause (300ms) to allow React Flow to render nodes, creating a "drawing" effect
+      if (nodeActions.length > 0 && edgeActions.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      // PHASE 2: Apply all edge additions/modifications second
+      if (edgeActions.length > 0) {
+        metadata.set("progressMessage", `Connecting ${edgeActions.length} edges...`);
+
+        // Move cursor to the centroid of newly created nodes
+        const newNodesWithPos = nodeActions.filter(a => a.type === "add_node" && a.position);
+        if (newNodesWithPos.length > 0) {
+          const centroid = {
+            x: newNodesWithPos.reduce((sum, p) => sum + p.position!.x, 0) / newNodesWithPos.length,
+            y: newNodesWithPos.reduce((sum, p) => sum + p.position!.y, 0) / newNodesWithPos.length,
+          };
+          await setAiPresence(roomId, centroid, true);
         }
-      });
+
+        await liveblocks.mutateStorage(roomId, ({ root }) => {
+          const rootAny = root as any;
+          let flow = rootAny.get("flow");
+          if (!flow) {
+            flow = new LiveObject({
+              nodes: new LiveMap(),
+              edges: new LiveMap(),
+            });
+            rootAny.set("flow", flow);
+          }
+
+          const edgesMap = flow.get("edges");
+
+          for (const act of edgeActions) {
+            switch (act.type) {
+              case "add_edge": {
+                const edgeObj = new LiveObject({
+                  id: act.id,
+                  type: "customCanvasEdge",
+                  source: act.source,
+                  target: act.target,
+                  data: new LiveObject({
+                    label: act.data?.label || "",
+                    directed: act.data?.directed !== false,
+                    controlX: null,
+                    controlY: null,
+                  } as any),
+                  selected: false,
+                  animated: act.animated ?? false,
+                } as any);
+                edgesMap.set(act.id, edgeObj);
+                break;
+              }
+              case "delete_edge": {
+                edgesMap.delete(act.id);
+                break;
+              }
+            }
+          }
+        });
+      }
 
       // Step 5: Wrap up task and clear presence
       metadata.set("progressMessage", "Design finalized!");
@@ -360,7 +471,7 @@ Interpret the user's intent and generate the minimal set of actions (add_node, u
 
       return {
         success: true,
-        actionsApplied: object.actions.length,
+        actionsApplied: validatedActions.length,
         explanation: object.explanation,
       };
     } catch (error: any) {

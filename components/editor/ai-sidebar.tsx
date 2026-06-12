@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect, useCallback } from "react"
-import { Sparkles, Bot, Send, FileText, Download, X, Loader2 } from "lucide-react"
+import { Sparkles, Bot, Send, FileText, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
@@ -30,6 +30,50 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
   const [activeRunId, setActiveRunId] = useState<string | undefined>(undefined)
   const [runToken, setRunToken] = useState<string | undefined>(undefined)
   const [progressMessage, setProgressMessage] = useState<string | undefined>(undefined)
+
+  const loadedProjectIdRef = useRef<string | undefined>(undefined)
+
+  // Load messages from sessionStorage when activeProject changes
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (activeProject?.id) {
+      try {
+        const saved = sessionStorage.getItem(`ghost-ai-chat-${activeProject.id}`)
+        setMessages(saved ? JSON.parse(saved) : [])
+      } catch {
+        setMessages([])
+      }
+      loadedProjectIdRef.current = activeProject.id
+    } else {
+      setMessages([])
+      loadedProjectIdRef.current = undefined
+    }
+  }, [activeProject?.id])
+
+  // Save to sessionStorage whenever messages change and activeProject is set
+  useEffect(() => {
+    if (typeof window === "undefined" || !activeProject?.id) return
+    if (loadedProjectIdRef.current === activeProject.id) {
+      sessionStorage.setItem(`ghost-ai-chat-${activeProject.id}`, JSON.stringify(messages))
+    }
+  }, [messages, activeProject?.id])
+
+  const handleCancel = useCallback(async () => {
+    if (!activeRunId) return
+    try {
+      await fetch(`/api/ai/design/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId: activeRunId }),
+      })
+    } catch (e) {
+      console.error("Failed to cancel run:", e)
+    }
+    setIsGenerating(false)
+    setActiveRunId(undefined)
+    setRunToken(undefined)
+    setProgressMessage(undefined)
+  }, [activeRunId])
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
@@ -337,9 +381,19 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
 
                 {/* Thinking indicator */}
                 {isGenerating && (
-                  <div className="self-start bg-elevated border border-surface-border rounded-2xl rounded-tl-none p-3 max-w-[88%] text-xs text-copy-muted flex items-center gap-2 shadow-md">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-ai-text shrink-0" />
-                    <span>{progressMessage || "Ghost AI is thinking…"}</span>
+                  <div className="self-start bg-elevated border border-surface-border rounded-2xl rounded-tl-none p-3 max-w-[88%] text-xs text-copy-muted flex flex-col gap-2 shadow-md w-full">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-ai-text shrink-0" />
+                      <span>{progressMessage || "Ghost AI is thinking…"}</span>
+                    </div>
+                    {activeRunId && (
+                      <button
+                        onClick={handleCancel}
+                        className="text-[10px] text-copy-faint hover:text-red-400 self-end transition-colors font-medium cursor-pointer mt-1"
+                      >
+                        Cancel Generation
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -380,45 +434,18 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
         {/* ── Tab 2: Specs ── */}
         <TabsContent
           value="specs"
-          className="flex-1 flex flex-col p-4 gap-4 outline-none overflow-y-auto min-h-0"
+          className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center outline-none"
         >
-          {/* Generate Spec button */}
-          <button className="w-full bg-brand-ai hover:bg-brand-ai/85 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border-0">
-            <Sparkles className="h-4 w-4" />
-            Generate Spec
-          </button>
-
-          {/* Demo Spec card */}
-          <div className="bg-elevated border border-surface-border rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
-            <div className="flex items-start gap-3">
-              <div className="h-9 w-9 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand shrink-0">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-semibold text-copy-primary truncate">
-                  ecommerce-backend-spec.md
-                </span>
-                <span className="text-[10px] text-copy-muted mt-0.5">
-                  Markdown Spec File
-                </span>
-              </div>
-            </div>
-            <p className="text-[10px] text-copy-secondary leading-relaxed font-light bg-subtle/40 border border-surface-border/30 rounded-lg p-2.5">
-              Baseline system design specification for e-commerce microservices, covering API Gateway routing, token auth, and database schema conventions.
-            </p>
-            <div className="flex items-center justify-between border-t border-surface-border/50 pt-2.5">
-              <span className="text-[9px] font-mono text-copy-faint uppercase">
-                Ready to export
-              </span>
-              <button
-                disabled
-                title="Download Spec (configure workspace first)"
-                className="h-6 w-6 rounded-md text-copy-muted opacity-40 flex items-center justify-center cursor-not-allowed"
-              >
-                <Download className="h-3.5 w-3.5" />
-              </button>
-            </div>
+          <div className="h-12 w-12 rounded-2xl bg-brand-ai/10 border border-brand-ai/20 flex items-center justify-center mb-2">
+            <FileText className="h-6 w-6 text-brand-ai-text animate-pulse" />
           </div>
+          <h3 className="text-xs font-semibold text-copy-primary">Spec Generation</h3>
+          <p className="text-[11px] text-copy-muted leading-relaxed max-w-[200px] font-light">
+            Export your canvas as a structured Markdown specification document. Coming soon.
+          </p>
+          <span className="text-[9px] font-mono text-copy-faint uppercase tracking-widest border border-surface-border px-2.5 py-1 rounded-lg">
+            In Development
+          </span>
         </TabsContent>
       </Tabs>
     </aside>

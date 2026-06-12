@@ -1,3 +1,6 @@
+import { LiveObject, LiveMap } from "@liveblocks/client"
+import { CanvasNode, CanvasEdge } from "@/types/canvas"
+
 // Define Liveblocks types for your application
 // https://liveblocks.io/docs/api-reference/liveblocks-react#Typing-your-data
 declare global {
@@ -8,7 +11,28 @@ declare global {
     };
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
-    Storage: Record<string, never>;
+    Storage: {
+      flow: LiveObject<{
+        nodes: LiveMap<string, LiveObject<{
+          id: string;
+          type: string;
+          position: { x: number; y: number };
+          data: Record<string, any>;
+          width?: number;
+          height?: number;
+          selected?: boolean;
+        }>>;
+        edges: LiveMap<string, LiveObject<{
+          id: string;
+          type: string;
+          source: string;
+          target: string;
+          data?: Record<string, any>;
+          selected?: boolean;
+          animated?: boolean;
+        }>>;
+      }>;
+    };
 
     // Custom user info set when authenticating with a secret key
     UserMeta: {
