@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useContext, useRef, useEffect } from "react"
+import React, { useState, useContext, useRef } from "react"
 import { BaseEdge, EdgeProps, EdgeLabelRenderer, useReactFlow, getSmoothStepPath, MarkerType } from "@xyflow/react"
 import { cn } from "@/lib/utils"
 import { CanvasEdge } from "@/types/canvas"
@@ -27,13 +27,6 @@ export function CustomCanvasEdge({
 
   const [isEditing, setIsEditing] = useState(false)
   const [labelText, setLabelText] = useState(data?.label || "")
-
-  // Sync local labelText when data?.label changes from other collaborators
-  useEffect(() => {
-    if (!isEditing) {
-      setLabelText(data?.label || "")
-    }
-  }, [data?.label, isEditing])
 
   // 1. Calculate path coordinates using hybrid routing:
   // - Untouched / Default: right-angled smoothstep path
@@ -118,7 +111,7 @@ export function CustomCanvasEdge({
     const color = selected ? "var(--accent-primary)" : "var(--border-default)"
     if (typeof markerEnd === "object" && markerEnd !== null) {
       resolvedMarkerEnd = {
-        ...(markerEnd as any),
+        ...(markerEnd as Record<string, unknown>),
         color,
       }
     } else if (typeof markerEnd === "string") {
@@ -151,7 +144,7 @@ export function CustomCanvasEdge({
             strokeWidth: selected ? 2 : 1.5,
             transition: "stroke 0.15s ease",
           }}
-          markerEnd={resolvedMarkerEnd}
+          markerEnd={resolvedMarkerEnd as unknown as string}
         />
         {/* Invisible thick path to make selection and double-clicking easy */}
         <path

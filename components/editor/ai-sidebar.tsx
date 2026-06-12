@@ -5,6 +5,9 @@ import { Sparkles, Bot, Send, FileText, Download, X, Loader2 } from "lucide-reac
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import { useRealtimeRun } from "@trigger.dev/react-hooks"
+import { useProjects } from "@/contexts/project-context"
+import type { designAgentTask } from "@/trigger/design-agent"
 
 interface AiSidebarProps {
   isOpen: boolean
@@ -23,18 +26,85 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
   const [inputValue, setInputValue] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
 
+  const { activeProject } = useProjects()
+  const [activeRunId, setActiveRunId] = useState<string | undefined>(undefined)
+  const [runToken, setRunToken] = useState<string | undefined>(undefined)
+  const [progressMessage, setProgressMessage] = useState<string | undefined>(undefined)
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Clear timeout on unmount or when handleSend is reconstructed
+  // Realtime subscription to design-agent background task
+  const { run, error: runError } = useRealtimeRun<typeof designAgentTask>(activeRunId, {
+    accessToken: runToken,
+    enabled: !!activeRunId && !!runToken,
+  })
+
+  // Synchronize realtime background run state with local UI state
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
+    if (!run) return
+
+    if (run.status === "EXECUTING" || run.status === "QUEUED") {
+      setIsGenerating(true)
+      const msg = run.metadata?.progressMessage as string | undefined
+      setProgressMessage(msg || "Ghost AI is analyzing prompt...")
+    } else if (run.status === "COMPLETED") {
+      setIsGenerating(false)
+      setProgressMessage(undefined)
+      
+      const output = run.output as { success?: boolean; explanation?: string; error?: string } | undefined
+      const explanation = output?.explanation || "Canvas updated successfully!"
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai_${Date.now()}`,
+          sender: "assistant",
+          text: explanation,
+        },
+      ])
+      
+      setActiveRunId(undefined)
+      setRunToken(undefined)
+    } else if (run.status === "FAILED" || run.status === "CANCELED") {
+      setIsGenerating(false)
+      setProgressMessage(undefined)
+      
+      const output = run.output as { success?: boolean; error?: string } | undefined
+      const errorMsg = output?.error || "Task run execution aborted or failed."
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai_err_${Date.now()}`,
+          sender: "assistant",
+          text: `I encountered an error trying to process your request: ${errorMsg}`,
+        },
+      ])
+      
+      setActiveRunId(undefined)
+      setRunToken(undefined)
     }
-  }, [])
+  }, [run])
+
+  // Handle run subscription errors
+  useEffect(() => {
+    if (runError) {
+      console.error("Realtime subscription error:", runError)
+      setIsGenerating(false)
+      setProgressMessage(undefined)
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai_sub_err_${Date.now()}`,
+          sender: "assistant",
+          text: "Lost connection to the architectural generation worker.",
+        },
+      ])
+      setActiveRunId(undefined)
+      setRunToken(undefined)
+    }
+  }, [runError])
 
   // Auto-resize textarea between 40px and 120px
   const adjustHeight = useCallback(() => {
@@ -53,35 +123,81 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, isGenerating])
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!inputValue.trim() || isGenerating) return
+    if (!activeProject) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg_err_${Date.now()}`,
+          sender: "assistant",
+          text: "No active project workspace detected. Please open a workspace before interacting with Ghost AI.",
+        },
+      ])
+      return
+    }
 
+    const userPrompt = inputValue.trim()
     const userMsg: Message = {
       id: `msg_${Date.now()}`,
       sender: "user",
-      text: inputValue.trim(),
+      text: userPrompt,
     }
     setMessages((prev) => [...prev, userMsg])
     setInputValue("")
     setIsGenerating(true)
+    setProgressMessage("Submitting request to task queue...")
 
-    // Clear any previous scheduled timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
+    try {
+      // 1. Trigger the background design-agent task
+      const triggerRes = await fetch("/api/ai/design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: userPrompt,
+          projectId: activeProject.id,
+          roomId: activeProject.id,
+        }),
+      })
 
-    timeoutRef.current = setTimeout(() => {
+      if (!triggerRes.ok) {
+        const errData = await triggerRes.json().catch(() => ({}))
+        throw new Error(errData.error || "Failed to enqueue design task.")
+      }
+
+      const { runId } = await triggerRes.json()
+
+      // 2. Fetch the run-scoped token
+      const tokenRes = await fetch("/api/ai/design/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId }),
+      })
+
+      if (!tokenRes.ok) {
+        const errData = await tokenRes.json().catch(() => ({}))
+        throw new Error(errData.error || "Failed to retrieve scoped token.")
+      }
+
+      const { token } = await tokenRes.json()
+
+      // 3. Initiate realtime tracking
+      setActiveRunId(runId)
+      setRunToken(token)
+    } catch (err: any) {
+      console.error("Error triggering design task:", err)
       setMessages((prev) => [
         ...prev,
         {
-          id: `msg_${Date.now() + 1}`,
+          id: `ai_trigger_err_${Date.now()}`,
           sender: "assistant",
-          text: `I've analyzed your prompt: "${userMsg.text}". Here is a structured recommendation for this design. Let me know if you'd like me to generate a markdown spec in the Specs tab or apply changes to the canvas.`,
+          text: `Failed to start architectural generation: ${err.message || err}`,
         },
       ])
       setIsGenerating(false)
-    }, 1000)
-  }, [inputValue, isGenerating])
+      setProgressMessage(undefined)
+    }
+  }, [inputValue, isGenerating, activeProject])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -223,7 +339,7 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
                 {isGenerating && (
                   <div className="self-start bg-elevated border border-surface-border rounded-2xl rounded-tl-none p-3 max-w-[88%] text-xs text-copy-muted flex items-center gap-2 shadow-md">
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-ai-text shrink-0" />
-                    <span>Ghost AI is thinking…</span>
+                    <span>{progressMessage || "Ghost AI is thinking…"}</span>
                   </div>
                 )}
 

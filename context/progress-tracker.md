@@ -35,6 +35,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[x]` AI Sidebar Shell (Feature 19: Dedicated floating overlay panel with AI Architect chat and Specs markdown generator card preview)
 - `[x]` Canvas Autosave (Feature 20: Persistent storage of collaborative canvas state to Vercel Blob and load empty-room guard)
 - `[x]` Design Agent API Setup (Feature 21: Added Prisma model TaskRun, created minimal design task trigger/design-agent.ts, created POST /api/ai/design to trigger background task, created POST /api/ai/design/token to generate scoped public read tokens)
+- `[x]` Design Agent Logic (Feature 22: Added full AI design agent backend execution using Gemini 2.5 and Liveblocks room storage mutations; animated cursor and thinking status presence broadcasts; integrated realtime useRealtimeRun hooks in the AI sidebar to stream progress status and explanation logs)
 
 ## In Progress
 
@@ -104,5 +105,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - **Resilient SPA Hook and Tab Exit Persistence (Autosave)**: Implemented tab-unload persistence using `beforeunload` listener with a `keepalive: true` fetch, coupled with an SPA component unmount cleanup flush. This ensures last-tick user edits are captured during both page reloads and internal client-side router transitions.
 
 - **Background Task Run Tracking & Scoped Tokens**: Implemented the `TaskRun` database tracking model to verify and protect background job runs. Real-time updates are enabled securely by generating run-scoped public access tokens (`auth.createPublicToken`) that restrict client-side token consumption only to the specific execution run and task ID.
+
+- **Node DNS Resolution Order for Trigger.dev Task Worker**: Configured `dns.setDefaultResultOrder("ipv4first")` at the entry point of the background task file (`trigger/design-agent.ts`) to force the local worker process (which runs child/worker processes under Windows/Node/Undici global fetch context) to prioritize IPv4 DNS resolutions. This resolves the recurring `TypeError: fetch failed` network resolution issues with Liveblocks and external API hosts.
+
 
 

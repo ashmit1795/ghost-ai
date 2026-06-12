@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState } from "react"
 import { useProjectActions, Project } from "@/hooks/use-project-actions"
 import { generateSlug } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -54,24 +54,25 @@ export function ProjectProvider({
   activeProjectId?: string
 }) {
   const router = useRouter()
+  const [prevActiveProjectId, setPrevActiveProjectId] = useState(activeProjectId)
+  const [prevInitialProjects, setPrevInitialProjects] = useState(initialProjects)
+  const [shareOpen, setShareOpen] = useState(false)
   const [activeProject, setActiveProject] = useState<Project | null>(() => {
     if (activeProjectId) {
       return initialProjects.find((p) => p.id === activeProjectId) || null
     }
     return null
   })
-  
-  const [shareOpen, setShareOpen] = useState(false)
 
-  // Synchronize state when page routes change or new initialProjects load
-  useEffect(() => {
-    if (activeProjectId) {
-      const project = initialProjects.find((p) => p.id === activeProjectId)
-      setActiveProject(project || null)
-    } else {
-      setActiveProject(null)
-    }
-  }, [activeProjectId, initialProjects])
+  // Synchronize state directly in render when page routes change or new initialProjects load
+  if (activeProjectId !== prevActiveProjectId || initialProjects !== prevInitialProjects) {
+    setPrevActiveProjectId(activeProjectId)
+    setPrevInitialProjects(initialProjects)
+    const project = activeProjectId
+      ? initialProjects.find((p) => p.id === activeProjectId) || null
+      : null
+    setActiveProject(project)
+  }
 
   const actions = useProjectActions(activeProject, setActiveProject)
 

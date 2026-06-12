@@ -1,4 +1,4 @@
-import { CanvasNode, CanvasEdge, NodeColorKey, NodeShape, CanvasNodeType } from "@/types/canvas"
+import { CanvasNode, CanvasEdge, NodeShape, CanvasNodeType } from "@/types/canvas"
 
 export interface CanvasTemplate {
   id: string

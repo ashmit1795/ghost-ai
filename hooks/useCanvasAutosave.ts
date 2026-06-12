@@ -27,6 +27,12 @@ export function useCanvasAutosave({
   const isUnloadingRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
+  const deferredSetSaveStatus = useCallback((status: SaveStatus) => {
+    Promise.resolve().then(() => {
+      setSaveStatus(status)
+    })
+  }, [])
+
   const stateRef = useRef({ nodes, edges })
   useEffect(() => {
     stateRef.current = { nodes, edges }
@@ -56,8 +62,8 @@ export function useCanvasAutosave({
 
       isDirtyRef.current = false
       setSaveStatus("saved")
-    } catch (error: any) {
-      if (error.name === "AbortError") {
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
         // Ignored: request was aborted to prevent state updates after unmount or override
         return
       }
@@ -80,7 +86,7 @@ export function useCanvasAutosave({
         timeoutRef.current = null
       }
       isDirtyRef.current = false
-      setSaveStatus("idle")
+      deferredSetSaveStatus("idle")
       return
     }
 
@@ -91,7 +97,7 @@ export function useCanvasAutosave({
 
     // Mark as dirty and set saving status since a change occurred while enabled
     isDirtyRef.current = true
-    setSaveStatus("saving")
+    deferredSetSaveStatus("saving")
 
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
@@ -106,7 +112,7 @@ export function useCanvasAutosave({
         clearTimeout(timeoutRef.current)
       }
     }
-  }, [nodes, edges, enabled, saveCanvas])
+  }, [nodes, edges, enabled, saveCanvas, deferredSetSaveStatus])
 
   // Abort pending fetch on unmount
   useEffect(() => {
